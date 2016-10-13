@@ -127,11 +127,11 @@ func Read(filename string) (script Script) {
 			continue
 		}
 
-		splitline := strings.SplitN(line, ":", 2)
-		if len(splitline) != 2 {
+		keyvalue := strings.SplitN(line, ":", 2)
+		if len(keyvalue) != 2 {
 			continue
 		}
-		key, value := splitline[0], splitline[1]
+		key, value := keyvalue[0], keyvalue[1]
 		key = strings.ToLower(key)
 		key = strings.Replace(key, " ", "_", -1)
 		value = strings.TrimSpace(value)
@@ -208,9 +208,10 @@ func Read(filename string) (script Script) {
 		case "video_aspect_ratio", "video_ar_value",
 			"aegisub_video_aspect_ratio":
 			ar := strings.Replace(value, "c", "", -1)
-			arsplit := strings.SplitN(ar, ":", 2)
-			if len(arsplit) == 2 {
-				num, den := utils.Str2float(arsplit[0]), utils.Str2float(arsplit[1])
+			numden := strings.SplitN(ar, ":", 2)
+			if len(numden) == 2 {
+				num, den := utils.Str2float(numden[0]),
+					utils.Str2float(numden[1])
 				videoar = num / den
 			} else {
 				videoar = utils.Str2float(ar)
