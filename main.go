@@ -2,17 +2,26 @@ package main
 
 import (
 	"fmt"
+	"time"
+	//"os"
 
 	"github.com/Alquimista/eyecandy-go/reader"
-	// "os"
-	"time"
 )
+
+// compile passing -ldflags "-X main.Build <build sha1>
+// git rev-parse --short HEAD
+// go list -f '{{join .Deps "\n"}}' |
+//   xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'
+var Build string
 
 func main() {
 	// filename := os.Args[1]
 	t0 := time.Now()
 
+	fmt.Printf("Using build: %s\n", Build)
+
 	script := reader.Read("test/test.ass")
+	fmt.Println(script)
 
 	fmt.Println("\nDIALOG")
 	for _, dialog := range script.Dialog {
@@ -26,9 +35,9 @@ func main() {
 	fmt.Println("\nALL DIALOG")
 	for _, dialog := range script.DialogWithComment {
 		if dialog.Comment {
-			fmt.Println("Comment:", dialog.Style.Name)
+			fmt.Println("Comment:", dialog.Style.Color)
 		} else {
-			fmt.Println("Dialog:", dialog.Style.Name)
+			fmt.Println("Dialog:", dialog.Style.Color.Primary)
 		}
 	}
 
