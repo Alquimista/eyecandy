@@ -10,98 +10,120 @@ import (
 	"github.com/Alquimista/eyecandy-go/utils"
 )
 
-// Video Subtitle Script Video Settings.
-type Video struct {
+type DialogCollection []*dialog
+
+// video Subtitle Script Video Settings.
+type video struct {
 	Path     string
 	Zoom     float64
 	Position int
 	AR       float64
 }
 
-// Meta Subtitle Script Metadata, Informative Text.
-type Meta struct {
+// meta Subtitle Script Metadata, Informative Text.
+type meta struct {
 	Filename, Title, OriginalScript, Translation, Timing string
 }
 
-// Resolution Subtitle Script Resolution.
-type Resolution struct {
+// resolution Subtitle Script Resolution.
+type resolution struct {
 	X, Y int
 }
 
-// Represent the subtitle's lines.
-type Dialog struct {
+// dialog Represent the subtitle's lines.
+type dialog struct {
 	Layer     int
 	Start     string
 	End       string
-	StyleName string
-	Style     *Style
+	styleName string
+	Style     *style
 	Actor     string
-	MarginL   int
-	MarginR   int
-	MarginV   int
+	Margin    *margin
 	Effect    string
 	Text      string
 	Comment   bool
 }
 
-// Font font used in a subtitle style.
-type Font struct {
+func (dlgs DialogCollection) GetAll() DialogCollection {
+	return dlgs
+}
+
+func (dlgs DialogCollection) GetCommented() DialogCollection {
+	var dialogs DialogCollection
+	for _, d := range dlgs {
+		if d.Comment {
+			dialogs = append(dialogs, d)
+		}
+	}
+	return dialogs
+}
+
+func (dlgs DialogCollection) GetNotCommented() DialogCollection {
+	var dialogs DialogCollection
+	for _, d := range dlgs {
+		if !d.Comment {
+			dialogs = append(dialogs, d)
+		}
+	}
+	return dialogs
+}
+
+// font font used in a subtitle style.
+type font struct {
 	Name string
 	Size int
 }
 
-// ColorP palette of colors used in a subtitle style.
-type ColorP struct {
+// colorp palette of colors used in a subtitle style.
+type colorp struct {
 	Primary, Secondary, Bord, Shadow string
 }
 
-// Scale Subtitle scale in percent.
+// scale Subtitle scale in percent.
 // X: Width,  Y: Height
-type Scale struct {
+type scale struct {
 	X, Y float64
 }
 
-// Margin Subtitle Margin.
+// margin Subtitle Margin.
 // L: Left,  R: Right, V: Vertical.
-type Margin struct {
+type margin struct {
 	L, R, V int
 }
 
-// Style represent Subtitle Style.
-type Style struct {
-	STR       string
+// style represent Subtitle Style.
+type style struct {
 	Name      string
-	Font      *Font
-	Color     *ColorP
+	Font      *font
+	Color     *colorp
 	Bold      bool
 	Italic    bool
 	Underline bool
 	StrikeOut bool
-	Scale     *Scale
+	Scale     *scale
 	Spacing   int
 	Angle     int
 	OpaqueBox bool
 	Bord      float64
 	Shadow    float64
 	Alignment int
-	Margin    *Margin
+	Margin    *margin
 	Encoding  int
 }
 
-// Script SSA/ASS Subtitle Script.
-type Script struct {
-	Dialog            []*Dialog
-	DialogWithComment []*Dialog
-	Style             map[string]*Style
-	StyleUsed         map[string]*Style
-	Resolution        *Resolution
-	Video             *Video
-	Audio             string
-	Meta              *Meta
+// script SSA/ASS Subtitle Script.
+type script struct {
+	Dialog     DialogCollection
+	Style      map[string]*style
+	StyleUsed  map[string]*style
+	Resolution *resolution
+	Video      *video
+	Audio      string
+	Meta       *meta
 }
 
 // Read parse and read an SSA/ASS Subtitle Script.
-func Read(filename string) (script Script) {
+func Read(filename string) (script script) {
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -109,9 +131,8 @@ func Read(filename string) (script Script) {
 	}
 	defer file.Close()
 
-	script.Style = make(map[string]*Style)
-	script.StyleUsed = make(map[string]*Style)
-	var tempDialog []*Dialog
+	script.Style = make(map[string]*style)
+	script.StyleUsed = make(map[string]*style)
 	var playresx, playresy int
 	var videopath string
 	var videozoom, videoar float64
@@ -139,28 +160,31 @@ func Read(filename string) (script Script) {
 		switch key {
 		case "dialogue", "comment":
 			d := strings.SplitN(value, ",", 10)
-			dialog := &Dialog{
-				Layer:     utils.Str2int(d[0]),
-				Start:     d[1],
-				End:       d[2],
-				StyleName: d[3],
+			dialog := &dialog{
+				Layer: utils.Str2int(d[0]),
+				Start: d[1],
+				End:   d[2],
+				// Style:     &style{},
+				styleName: d[3],
 				Actor:     d[4],
-				MarginL:   utils.Str2int(d[5]),
-				MarginR:   utils.Str2int(d[6]),
-				MarginV:   utils.Str2int(d[7]),
-				Effect:    d[8],
-				Text:      strings.TrimSpace(d[9]),
-				Comment:   key == "comment",
+				Margin: &margin{
+					L: utils.Str2int(d[5]),
+					R: utils.Str2int(d[6]),
+					V: utils.Str2int(d[7]),
+				},
+				Effect:  d[8],
+				Text:    strings.TrimSpace(d[9]),
+				Comment: key == "comment",
 			}
-			tempDialog = append(tempDialog, dialog)
+			script.Dialog = append(script.Dialog, dialog)
 		case "style":
 			s := strings.SplitN(value, ",", 23)
-			style := &Style{
+			style := &style{
 				Name: s[0],
-				Font: &Font{
+				Font: &font{
 					Name: s[1],
 					Size: utils.Str2int(s[2])},
-				Color: &ColorP{
+				Color: &colorp{
 					Primary:   s[3],
 					Secondary: s[4],
 					Bord:      s[5],
@@ -170,7 +194,7 @@ func Read(filename string) (script Script) {
 				Italic:    utils.Str2bool(s[8]),
 				Underline: utils.Str2bool(s[9]),
 				StrikeOut: utils.Str2bool(s[10]),
-				Scale: &Scale{
+				Scale: &scale{
 					X: utils.Str2float(s[11]),
 					Y: utils.Str2float(s[12]),
 				},
@@ -180,7 +204,7 @@ func Read(filename string) (script Script) {
 				Bord:      utils.Str2float(s[16]),
 				Shadow:    utils.Str2float(s[17]),
 				Alignment: utils.Str2int(s[18]),
-				Margin: &Margin{
+				Margin: &margin{
 					L: utils.Str2int(s[19]),
 					R: utils.Str2int(s[20]),
 					V: utils.Str2int(s[21]),
@@ -231,14 +255,14 @@ func Read(filename string) (script Script) {
 		}
 	}
 
-	script.Resolution = &Resolution{playresx, playresy}
-	script.Video = &Video{
+	script.Resolution = &resolution{playresx, playresy}
+	script.Video = &video{
 		Path:     videopath,
 		Zoom:     videozoom,
 		Position: videopos,
 		AR:       videoar,
 	}
-	script.Meta = &Meta{
+	script.Meta = &meta{
 		Filename:       filename,
 		Title:          title,
 		OriginalScript: originalscript,
@@ -246,17 +270,16 @@ func Read(filename string) (script Script) {
 		Timing:         timing,
 	}
 
-	for _, d := range tempDialog {
-		d.Style = script.Style[d.StyleName]
-		if !d.Comment {
-			// Replace the Dialog Style(Style Name)
-			// for the style object of that Style Name
-			script.StyleUsed[d.StyleName] = d.Style
-			// Capture Subtitles Lines not Commented.
-			script.Dialog = append(script.Dialog, d)
+	// Get only the styles used in dialogs
+	for _, d := range script.Dialog {
+		style, ok := script.Style[d.styleName]
+		if !ok {
+			style = script.Style["Default"]
 		}
-		// Capture all the Subtitles Lines Commented or Not.
-		script.DialogWithComment = append(script.Dialog, d)
+		d.Style = style
+		if !d.Comment {
+			script.StyleUsed[d.styleName] = style
+		}
 	}
 
 	return
