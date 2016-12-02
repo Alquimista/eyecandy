@@ -3,8 +3,8 @@
 package writer
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -51,7 +51,6 @@ Active Line: 1
 [V4+ Styles]
 %s
 %s
-
 [Events]
 %s
 %s`
@@ -93,8 +92,8 @@ func init() {
 
 }
 
-// style represent subtitle"s styles.
-type style struct {
+// Style represent subtitle"s styles.
+type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
@@ -114,7 +113,7 @@ type style struct {
 	Encoding  int
 }
 
-func (s *style) toString() string {
+func (s *Style) toString() string {
 	opaquebox := 3
 	if !s.OpaqueBox {
 		opaquebox = 0
@@ -135,12 +134,12 @@ func (s *style) toString() string {
 		s.Encoding)
 }
 
-func NewStyle(name string) *style {
+func NewStyle(name string) *Style {
 	fontname := "Sans"
 	if runtime.GOOS == "windows" {
 		fontname = "Arial"
 	}
-	return &style{
+	return &Style{
 		Name:     name,
 		FontName: fontname,
 		FontSize: 35,
@@ -158,21 +157,21 @@ func NewStyle(name string) *style {
 	}
 }
 
-// dialog Represent the subtitle"s lines.
-type dialog struct {
-	Layer   int
-	Start   string
-	End     string
-	Style   string
-	Actor   string
-	Effect  string
-	Text    string
-	Tags    string
-	Margin  [3]int // L, R, V map[string]string
-	Comment bool
+// Dialog Represent the subtitle"s lines.
+type Dialog struct {
+	Layer     int
+	Start     string
+	End       string
+	StyleName string
+	Actor     string
+	Effect    string
+	Text      string
+	Tags      string
+	Margin    [3]int // L, R, V map[string]string
+	Comment   bool
 }
 
-func (d *dialog) toString() string {
+func (d *Dialog) toString() string {
 	text := d.Text
 	key := "Dialogue"
 	if d.Comment == true {
@@ -185,31 +184,29 @@ func (d *dialog) toString() string {
 		key,
 		d.Layer,
 		d.Start, d.End,
-		d.Style, d.Actor,
+		d.StyleName, d.Actor,
 		d.Margin[0], d.Margin[1], d.Margin[2],
 		d.Effect,
 		text)
 }
 
-func NewDialog(text string) *dialog {
-	return &dialog{
-		Style: "Default",
-		Start: "0:00:00.00", End: "0:00:05.00",
+func NewDialog(text string) *Dialog {
+	return &Dialog{
+		StyleName: "Default",
+		Start:     "0:00:00.00", End: "0:00:05.00",
 		Text: text}
 }
 
 // Script SSA/ASS Subtitle Script.
 type script struct {
-	dialog []*dialog
-	// style              []*style //TODO: map[string]string
-	style              map[string]*style
+	Dialog             []*Dialog
+	Style              map[string]*Style
 	Comment            string
 	Resolution         [2]int // WIDTH, HEIGHT map[string]string
 	VideoPath          string
 	VideoZoom          float64
 	VideoPosition      int
 	VideoAR            float64
-	VideoAudio         string
 	MetaFilename       string
 	MetaTitle          string
 	MetaOriginalScript string
@@ -218,29 +215,29 @@ type script struct {
 	Audio              string
 }
 
-func (script *script) GetStyle(name string) *style {
-	style, ok := script.style[name]
+func (script *script) GetStyle(name string) *Style {
+	style, ok := script.Style[name]
 	if !ok {
-		style = script.style["Default"]
+		style = script.Style["Default"]
 		style.Name = name
 	}
 	return style
 }
 
 func (script *script) styleExists(name string) bool {
-	_, ok := script.style[name]
+	_, ok := script.Style[name]
 	return ok
 }
 
-func (script *script) AddStyle(s *style) {
+func (script *script) AddStyle(s *Style) {
 	if !script.styleExists(s.Name) {
-		script.style[s.Name] = s
+		script.Style[s.Name] = s
 	}
 }
 
-func (s *script) AddDialog(d *dialog) {
+func (s *script) AddDialog(d *Dialog) {
 	if d.Text != "" {
-		s.dialog = append(s.dialog, d)
+		s.Dialog = append(s.Dialog, d)
 	}
 }
 
@@ -248,7 +245,7 @@ func (s *script) ToString() string {
 
 	defaultSTY := NewStyle("Default")
 	s.AddStyle(defaultSTY)
-	if len(s.dialog) == 0 {
+	if len(s.Dialog) == 0 {
 		defaultDLG := NewDialog("EyecandyFX")
 		s.AddDialog(defaultDLG)
 	}
@@ -287,49 +284,52 @@ func (s *script) ToString() string {
 		}
 	}
 
-	var styles []string
-	var dialogs []string
 	var dialogStyleNames []string
+	var styles bytes.Buffer
+	var dialogs bytes.Buffer
 
-	for _, d := range s.dialog {
+	for _, d := range s.Dialog {
 		if !d.Comment {
-			dialogStyleNames = append(dialogStyleNames, d.Style)
+			dialogStyleNames = utils.AppendStrUnique(
+				dialogStyleNames, d.StyleName)
 		}
-		dialogs = append(dialogs, d.toString())
+		dialogs.WriteString(d.toString() + "\n")
 	}
 
 	// Write only used styles in dialogs
 	// If doesn't exist create it
 	for _, sname := range dialogStyleNames {
-		_, ok := s.style[sname]
+		_, ok := s.Style[sname]
 		i := 0
-		for _, sty := range s.style {
+		for _, sty := range s.Style {
 			if !ok {
-				sty = s.style["Default"]
+				sty = s.Style["Default"]
 				sty.Name = sname
 				i = i + 1
 			} else {
 				i = 1
 			}
 			if sty.Name == sname && i == 1 {
-				styles = append(styles, sty.toString())
+				styles.WriteString(sty.toString() + "\n")
 			}
 		}
 	}
 
-	ssa := fmt.Sprintf(SCRIPT_TEMPLATE,
+	return fmt.Sprintf(SCRIPT_TEMPLATE,
 		s.Comment,
 		s.MetaTitle, s.MetaOriginalScript,
 		s.MetaTranslation, s.MetaTiming,
 		s.Resolution[0], s.Resolution[1],
 		s.VideoPath, s.VideoAR, s.VideoZoom, s.VideoPosition,
 		s.Audio,
-		STYLE_FORMAT, strings.Join(styles, "\n"),
-		DIALOG_FORMAT, strings.Join(dialogs, "\n"))
-	return ssa
+		STYLE_FORMAT, styles.String(),
+		// STYLE_FORMAT, strings.Join(styles, "\n"),
+		DIALOG_FORMAT, dialogs.String())
+
 }
 
 // Write an SSA/ASS Subtitle Script.
+// FIXME: Aegisub could not narrow down character set to a single one
 func (s *script) Save(filename string) {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -338,10 +338,14 @@ func (s *script) Save(filename string) {
 	defer file.Close()
 
 	s.MetaFilename = filename
-	n, err := io.WriteString(file, s.ToString())
+	// w := bufio.NewWriter(file)
+	// n, err := io.WriteString(file, s.ToString())
+	// n, err := w.WriteString(s.ToString())
+	n, err := file.WriteString(s.ToString())
 	if err != nil {
 		fmt.Println(n, err)
 	}
+	// w.Flush()
 
 	// save changes
 	err = file.Sync()
@@ -352,6 +356,6 @@ func NewScript() *script {
 		Comment:   "Script generated by Eyecandy",
 		MetaTitle: "Default Eyecandy file",
 		VideoZoom: 0.75,
-		style:     map[string]*style{},
+		Style:     map[string]*Style{},
 	}
 }

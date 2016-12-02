@@ -25,6 +25,14 @@ func Str2bool(s string) bool {
 	return i != 0
 }
 
+// Obox2bool convert a string to a boolean.
+func Obox2bool(s string) bool {
+	if s == "3" {
+		return true
+	}
+	return false
+}
+
 func Bool2str(b bool) string {
 	if b {
 		return "-1"
@@ -67,4 +75,13 @@ func ToScale(input, min, max float64) float64 {
 	} else {
 		return i
 	}
+}
+
+func AppendStrUnique(slice []string, s string) []string {
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
+	}
+	return append(slice, s)
 }

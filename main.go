@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"time"
-	//"os"
 
 	"github.com/Alquimista/eyecandy-go/reader"
 	"github.com/Alquimista/eyecandy-go/writer"
@@ -14,72 +13,62 @@ import (
 var Build string
 
 func main() {
-	fmt.Printf("Using build: %s\n", Build)
+	// fmt.Printf("Using build: %s\n", Build)
 
 	// filename := os.Args[1]
 	t0 := time.Now()
 
-	scriptw := writer.NewScript()
-	// scriptw.Resolution = [2]int{848, 480}
+	input := reader.Read("test/test.ass")
+	output := writer.NewScript()
+	output.Resolution = input.Resolution
+	output.VideoPath = input.VideoPath
+	output.VideoZoom = input.VideoZoom
+	output.VideoPosition = input.VideoPosition
+	output.VideoAR = input.VideoAR
+	output.MetaFilename = input.MetaFilename
+	output.MetaTitle = input.MetaTitle
+	output.MetaOriginalScript = input.MetaOriginalScript
+	output.MetaTranslation = input.MetaTranslation
+	output.MetaTiming = input.MetaTiming
+	output.Audio = input.Audio
 
-	d := writer.NewDialog("EyecandyFX")
-	scriptw.AddDialog(d)
-
-	d = writer.NewDialog("EyecandyFXComment1")
-	d.Style = "Default2"
-	d.Tags = "\\blur5\\3c&HFFFAB5&\\bord0.5"
-	scriptw.AddDialog(d)
-
-	d = writer.NewDialog("EyecandyFXComment2")
-	d.Comment = false
-	d.Style = "Default3"
-	scriptw.AddDialog(d)
-
-	d = writer.NewDialog("EyecandyFXComment3")
-	d.Comment = true
-	d.Style = "Default4"
-	scriptw.AddDialog(d)
-
-	s := writer.NewStyle("Default2")
-	s.Color[0] = "&H00FFFAB5&"
-	scriptw.AddStyle(s)
-
-	s = writer.NewStyle("Default5")
-	scriptw.AddStyle(s)
-
-	// fmt.Println(scriptw.ToString())
-	scriptw.Save("test/test.ass")
-
-	script := reader.Read("test/test.ass")
-	// fmt.Println(script)
-
-	fmt.Println("\nDIALOG")
-	for _, dialog := range script.Dialog.GetNotCommented() {
-		fmt.Println("Dialog:", dialog.Style.Name)
+	for _, style := range input.StyleUsed {
+		s := writer.NewStyle(style.Name)
+		s.Name = style.Name
+		s.FontName = style.FontName
+		s.FontSize = style.FontSize
+		s.Color = style.Color
+		s.Bold = style.Bold
+		s.Italic = style.Italic
+		s.Underline = style.Underline
+		s.StrikeOut = style.StrikeOut
+		s.Scale = style.Scale
+		s.Spacing = style.Spacing
+		s.Angle = style.Angle
+		s.OpaqueBox = style.OpaqueBox
+		s.Bord = style.Bord
+		s.Shadow = style.Shadow
+		s.Alignment = style.Alignment
+		s.Margin = style.Margin
+		s.Encoding = style.Encoding
+		output.AddStyle(s)
 	}
 
-	fmt.Println("\nALL DIALOG")
-	for _, dialog := range script.Dialog.GetAll() {
-		if dialog.Comment {
-			fmt.Println("Comment:", dialog.Style.Color)
-		} else {
-			fmt.Println("Dialog:", dialog.Style.Color)
-		}
+	for _, dlg := range input.Dialog.GetNotCommented() {
+		d := writer.NewDialog(dlg.Text)
+		d.Layer = dlg.Layer
+		d.Start = dlg.Start
+		d.End = dlg.End
+		d.StyleName = dlg.StyleName
+		d.Actor = dlg.Actor
+		d.Effect = dlg.Effect
+		d.Tags = "\\blur5\\1c&HD0C9AD&\\3c&HFFFAB5&\\bord0.5"
+		d.Margin = dlg.Margin
+		d.Comment = dlg.Comment
+		output.AddDialog(d)
 	}
 
-	fmt.Println("\nALL STYLES")
-	for styleName, style := range script.Style {
-		fmt.Println("Style:", styleName, style)
-	}
-
-	fmt.Println("\nUSED STYLES")
-	for styleName, style := range script.StyleUsed {
-		fmt.Println("StyleUsed:", styleName, style)
-	}
-
-	// fmt.Println(utils.FromScale(127, 0, 255))
-	// fmt.Println(utils.ToScale(0.5, 0, 255))
-	// fmt.Println(writer.ALIGN["top left"])
+	output.Save("test/test.fx.ass")
 
 	elapsed := time.Since(t0)
 	fmt.Printf("\nTook %s\n", elapsed)

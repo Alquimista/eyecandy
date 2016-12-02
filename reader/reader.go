@@ -10,39 +10,22 @@ import (
 	"github.com/Alquimista/eyecandy-go/utils"
 )
 
-type DialogCollection []*dialog
-
-// video Subtitle Script Video Settings.
-type video struct {
-	Path     string
-	Zoom     float64
-	Position int
-	AR       float64
-}
-
-// meta Subtitle Script Metadata, Informative Text.
-type meta struct {
-	Filename, Title, OriginalScript, Translation, Timing string
-}
-
-// resolution Subtitle Script Resolution.
-type resolution struct {
-	X, Y int
-}
-
-// dialog Represent the subtitle's lines.
-type dialog struct {
+// Dialog Represent the subtitle's lines.
+type Dialog struct {
 	Layer     int
 	Start     string
 	End       string
-	styleName string
-	Style     *style
+	StyleName string
+	Style     *Style
 	Actor     string
-	Margin    *margin
 	Effect    string
 	Text      string
+	Tags      string
+	Margin    [3]int // L, R, V map[string]string
 	Comment   bool
 }
+
+type DialogCollection []*Dialog
 
 func (dlgs DialogCollection) GetAll() DialogCollection {
 	return dlgs
@@ -68,62 +51,47 @@ func (dlgs DialogCollection) GetNotCommented() DialogCollection {
 	return dialogs
 }
 
-// font font used in a subtitle style.
-type font struct {
-	Name string
-	Size int
-}
-
-// colorp palette of colors used in a subtitle style.
-type colorp struct {
-	Primary, Secondary, Bord, Shadow string
-}
-
-// scale Subtitle scale in percent.
-// X: Width,  Y: Height
-type scale struct {
-	X, Y float64
-}
-
-// margin Subtitle Margin.
-// L: Left,  R: Right, V: Vertical.
-type margin struct {
-	L, R, V int
-}
-
-// style represent Subtitle Style.
-type style struct {
+// Style represent Subtitle Style.
+type Style struct {
 	Name      string
-	Font      *font
-	Color     *colorp
+	FontName  string
+	FontSize  int
+	Color     [4]string //Primary, Secondary, Bord, Shadow map[string]string
 	Bold      bool
 	Italic    bool
 	Underline bool
 	StrikeOut bool
-	Scale     *scale
+	Scale     [2]float64 // WIDTH, HEIGHT map[string]string
 	Spacing   int
 	Angle     int
 	OpaqueBox bool
 	Bord      float64
 	Shadow    float64
 	Alignment int
-	Margin    *margin
+	Margin    [3]int // L, R, V map[string]string
 	Encoding  int
 }
 
-// script SSA/ASS Subtitle Script.
-type script struct {
-	Dialog     DialogCollection
-	Style      map[string]*style
-	StyleUsed  map[string]*style
-	Resolution *resolution
-	Video      *video
-	Audio      string
-	Meta       *meta
+// Script SSA/ASS Subtitle Script.
+type Script struct {
+	Dialog             DialogCollection
+	Style              map[string]*Style
+	StyleUsed          map[string]*Style
+	Resolution         [2]int // WIDTH, HEIGHT map[string]string
+	VideoPath          string
+	VideoZoom          float64
+	VideoPosition      int
+	VideoAR            float64
+	MetaFilename       string
+	MetaTitle          string
+	MetaOriginalScript string
+	MetaTranslation    string
+	MetaTiming         string
+	Audio              string
 }
 
 // Read parse and read an SSA/ASS Subtitle Script.
-func Read(filename string) (script script) {
+func Read(filename string) (script Script) {
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -131,13 +99,10 @@ func Read(filename string) (script script) {
 	}
 	defer file.Close()
 
-	script.Style = make(map[string]*style)
-	script.StyleUsed = make(map[string]*style)
+	script.Style = make(map[string]*Style)
+	script.StyleUsed = make(map[string]*Style)
 	var playresx, playresy int
-	var videopath string
 	var videozoom, videoar float64
-	var videopos int
-	var title, originalscript, translation, timing string
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -160,17 +125,16 @@ func Read(filename string) (script script) {
 		switch key {
 		case "dialogue", "comment":
 			d := strings.SplitN(value, ",", 10)
-			dialog := &dialog{
-				Layer: utils.Str2int(d[0]),
-				Start: d[1],
-				End:   d[2],
-				// Style:     &style{},
-				styleName: d[3],
+			dialog := &Dialog{
+				Layer:     utils.Str2int(d[0]),
+				Start:     d[1],
+				End:       d[2],
+				StyleName: d[3],
 				Actor:     d[4],
-				Margin: &margin{
-					L: utils.Str2int(d[5]),
-					R: utils.Str2int(d[6]),
-					V: utils.Str2int(d[7]),
+				Margin: [3]int{
+					utils.Str2int(d[5]),
+					utils.Str2int(d[6]),
+					utils.Str2int(d[7]),
 				},
 				Effect:  d[8],
 				Text:    strings.TrimSpace(d[9]),
@@ -179,35 +143,29 @@ func Read(filename string) (script script) {
 			script.Dialog = append(script.Dialog, dialog)
 		case "style":
 			s := strings.SplitN(value, ",", 23)
-			style := &style{
-				Name: s[0],
-				Font: &font{
-					Name: s[1],
-					Size: utils.Str2int(s[2])},
-				Color: &colorp{
-					Primary:   s[3],
-					Secondary: s[4],
-					Bord:      s[5],
-					Shadow:    s[6],
-				},
+			style := &Style{
+				Name:      s[0],
+				FontName:  s[1],
+				FontSize:  utils.Str2int(s[2]),
+				Color:     [4]string{s[3], s[4], s[5], s[6]},
 				Bold:      utils.Str2bool(s[7]),
 				Italic:    utils.Str2bool(s[8]),
 				Underline: utils.Str2bool(s[9]),
 				StrikeOut: utils.Str2bool(s[10]),
-				Scale: &scale{
-					X: utils.Str2float(s[11]),
-					Y: utils.Str2float(s[12]),
+				Scale: [2]float64{
+					utils.Str2float(s[11]),
+					utils.Str2float(s[12]),
 				},
 				Spacing:   utils.Str2int(s[13]),
 				Angle:     utils.Str2int(s[14]),
-				OpaqueBox: utils.Str2bool(s[15]),
+				OpaqueBox: utils.Obox2bool(s[15]),
 				Bord:      utils.Str2float(s[16]),
 				Shadow:    utils.Str2float(s[17]),
 				Alignment: utils.Str2int(s[18]),
-				Margin: &margin{
-					L: utils.Str2int(s[19]),
-					R: utils.Str2int(s[20]),
-					V: utils.Str2int(s[21]),
+				Margin: [3]int{
+					utils.Str2int(s[19]),
+					utils.Str2int(s[20]),
+					utils.Str2int(s[21]),
 				},
 				Encoding: utils.Str2int(s[22]),
 			}
@@ -219,7 +177,7 @@ func Read(filename string) (script script) {
 		case "audio_uri", "audio_file":
 			script.Audio = value
 		case "video_file":
-			videopath = value
+			script.VideoPath = value
 		case "video_zoom_percent":
 			videozoom = utils.Str2float(value)
 		case "video_zoom":
@@ -240,45 +198,35 @@ func Read(filename string) (script script) {
 			} else {
 				videoar = utils.Str2float(ar)
 			}
+			script.VideoAR = videoar
 		case "video_position":
-			videopos = utils.Str2int(value)
+			script.VideoPosition = utils.Str2int(value)
 		case "title":
-			title = value
+			script.MetaTitle = value
 		case "original_script":
-			originalscript = value
+			script.MetaOriginalScript = value
 		case "translation":
-			translation = value
+			script.MetaTranslation = value
 		case "timing":
-			timing = value
+			script.MetaTiming = value
 		default:
 			continue
 		}
 	}
 
-	script.Resolution = &resolution{playresx, playresy}
-	script.Video = &video{
-		Path:     videopath,
-		Zoom:     videozoom,
-		Position: videopos,
-		AR:       videoar,
-	}
-	script.Meta = &meta{
-		Filename:       filename,
-		Title:          title,
-		OriginalScript: originalscript,
-		Translation:    translation,
-		Timing:         timing,
-	}
+	script.Resolution = [2]int{playresx, playresy}
+	script.VideoZoom = videozoom
+	script.MetaFilename = filename
 
 	// Get only the styles used in dialogs
 	for _, d := range script.Dialog {
-		style, ok := script.Style[d.styleName]
+		style, ok := script.Style[d.StyleName]
 		if !ok {
 			style = script.Style["Default"]
 		}
 		d.Style = style
 		if !d.Comment {
-			script.StyleUsed[d.styleName] = style
+			script.StyleUsed[d.StyleName] = style
 		}
 	}
 
