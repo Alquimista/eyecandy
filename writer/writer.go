@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Alquimista/eyecandy-go/asstime"
-	"github.com/Alquimista/eyecandy-go/utils"
+	"github.com/Alquimista/eyecandy/asstime"
+	"github.com/Alquimista/eyecandy/utils"
 )
 
 const dummyVideoTemplate string = "?dummy:%.6f:%d:%d:%d:%d:%d:%d%s:"
@@ -118,8 +118,8 @@ type Style struct {
 	Encoding  int
 }
 
-// toString get the generated Style as a String
-func (sty *Style) toString() string {
+// String get the generated Style as a String
+func (sty *Style) String() string {
 	return fmt.Sprintf(styleTemplate,
 		sty.Name,
 		sty.FontName, sty.FontSize,
@@ -139,6 +139,7 @@ func (sty *Style) toString() string {
 // NewStyle create a new Style Struct with defaults
 func NewStyle(name string) *Style {
 	fontname := "Sans"
+	// TODO: GO GENERATE FOR DIFERENT PLATFORM CASES
 	if runtime.GOOS == "windows" {
 		fontname = "Arial"
 	}
@@ -174,8 +175,8 @@ type Dialog struct {
 	Comment   bool
 }
 
-// toString get the generated Dialog as a String
-func (d *Dialog) toString() string {
+// String get the generated Dialog as a String
+func (d *Dialog) String() string {
 	text := d.Text
 	key := "Dialogue"
 	if d.Comment {
@@ -251,8 +252,8 @@ func (s *Script) AddDialog(d *Dialog) {
 	}
 }
 
-// ToString get the generated SSA/ASS Script as a String
-func (s *Script) ToString() string {
+// String get the generated SSA/ASS Script as a String
+func (s *Script) String() string {
 
 	// Add default dialog and style
 	s.AddStyle(NewStyle("Default"))
@@ -303,7 +304,7 @@ func (s *Script) ToString() string {
 			dialogStyleNames = utils.AppendStrUnique(
 				dialogStyleNames, d.StyleName)
 		}
-		dialogs.WriteString(d.toString() + "\n")
+		dialogs.WriteString(d.String() + "\n")
 	}
 
 	// Write only used styles in dialogs
@@ -315,12 +316,12 @@ func (s *Script) ToString() string {
 			if !ok {
 				sty = s.Style["Default"]
 				sty.Name = sname
-				i = i + 1
+				i++
 			} else {
 				i = 1
 			}
 			if sty.Name == sname && i == 1 {
-				styles.WriteString(sty.toString() + "\n")
+				styles.WriteString(sty.String() + "\n")
 			}
 		}
 	}
@@ -349,7 +350,7 @@ func (s *Script) Save(fn string) {
 
 	s.MetaFilename = fn
 
-	n, err := f.WriteString(s.ToString())
+	n, err := f.WriteString(s.String())
 	if err != nil {
 		fmt.Println(n, err)
 	}

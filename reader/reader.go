@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Alquimista/eyecandy-go/utils"
+	"github.com/Alquimista/eyecandy/utils"
 )
 
 // Dialog Represent the subtitle's lines.
@@ -28,13 +28,13 @@ type Dialog struct {
 // DialogCollection collection of Dialog's in a SSA/ASS Script
 type DialogCollection []*Dialog
 
-// GetAll list all the dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) GetAll() DialogCollection {
-	return dlgs
-}
+// All list all the dialog's in a SSA/ASS Script
+// func (dlgs DialogCollection) All() DialogCollection {
+// 	return dlgs
+// }
 
-// Get list dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) Get(commented bool) (dialogs DialogCollection) {
+// get list dialog's in a SSA/ASS Script
+func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
 	for _, d := range dlgs {
 		if d.Comment == commented {
 			dialogs = append(dialogs, d)
@@ -43,14 +43,14 @@ func (dlgs DialogCollection) Get(commented bool) (dialogs DialogCollection) {
 	return dialogs
 }
 
-// GetCommented list only the commented dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) GetCommented() DialogCollection {
-	return dlgs.Get(true)
+// Commented list only the commented dialog's in a SSA/ASS Script
+func (dlgs DialogCollection) Commented() DialogCollection {
+	return dlgs.get(true)
 }
 
-// GetNotCommented list only the not commented dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) GetNotCommented() DialogCollection {
-	return dlgs.Get(false)
+// NotCommented list only the not commented dialog's in a SSA/ASS Script
+func (dlgs DialogCollection) NotCommented() DialogCollection {
+	return dlgs.get(false)
 }
 
 // Style represent Subtitle Style.
@@ -92,6 +92,7 @@ type Script struct {
 	Audio              string
 }
 
+// parseStyle parse an SSA/ASS Subtitle Dialog.
 func parseDialog(key, value string) *Dialog {
 	d := strings.SplitN(value, ",", 10)
 	return &Dialog{
@@ -111,6 +112,7 @@ func parseDialog(key, value string) *Dialog {
 	}
 }
 
+// parseStyle parse an SSA/ASS Subtitle Style.
 func parseStyle(value string) *Style {
 	sty := strings.SplitN(value, ",", 23)
 	return &Style{
@@ -137,9 +139,9 @@ func parseStyle(value string) *Style {
 		Shadow:    utils.Str2float(sty[17]),
 		Alignment: utils.Str2int(sty[18]),
 		Margin: [3]int{
-			utils.Str2int(sty[19]),
-			utils.Str2int(sty[20]),
-			utils.Str2int(sty[21]),
+			utils.Str2int(sty[19]), // L
+			utils.Str2int(sty[20]), // R
+			utils.Str2int(sty[21]), // V
 		},
 		Encoding: utils.Str2int(sty[22]),
 	}

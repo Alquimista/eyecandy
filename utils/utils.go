@@ -68,24 +68,24 @@ func Round(f float64, places int) float64 {
 	return _round(f*shift) / shift
 }
 
-// FromScale returns a converted input from min, max to 0.0...1.0.
-func FromScale(input, min, max float64) float64 {
-	return (input - math.Min(min, max)) / (math.Max(min, max) - math.Min(min, max))
-}
+// // FromScale returns a converted input from min, max to 0.0...1.0.
+// func FromScale(input, min, max float64) float64 {
+// 	return (input - math.Min(min, max)) / (math.Max(min, max) - math.Min(min, max))
+// }
 
-// ToScale returns a converted input from 0...1 to min...max scale.
-// If input is less than min then ToScale returns min.
-// If input is greater than max then ToScale returns max
-func ToScale(input, min, max float64) float64 {
-	i := input*(math.Max(min, max)-math.Min(min, max)) + math.Min(min, max)
-	if i < math.Min(min, max) {
-		return math.Min(min, max)
-	} else if i > math.Max(min, max) {
-		return math.Max(min, max)
-	} else {
-		return i
-	}
-}
+// // ToScale returns a converted input from 0...1 to min...max scale.
+// // If input is less than min then ToScale returns min.
+// // If input is greater than max then ToScale returns max
+// func ToScale(input, min, max float64) float64 {
+// 	i := input*(math.Max(min, max)-math.Min(min, max)) + math.Min(min, max)
+// 	if i < math.Min(min, max) {
+// 		return math.Min(min, max)
+// 	} else if i > math.Max(min, max) {
+// 		return math.Max(min, max)
+// 	} else {
+// 		return i
+// 	}
+// }
 
 // AppendStrUnique append to a string slice if the value doesn't already exist
 func AppendStrUnique(slice []string, s string) []string {
