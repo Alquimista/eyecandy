@@ -1,4 +1,4 @@
-// reader SSA/ASS Subtitle Script Parser
+// Package reader read an SSA/ASS Subtitle Script
 package reader
 
 import (
@@ -25,30 +25,32 @@ type Dialog struct {
 	Comment   bool
 }
 
+// DialogCollection collection of Dialog's in a SSA/ASS Script
 type DialogCollection []*Dialog
 
+// GetAll list all the dialog's in a SSA/ASS Script
 func (dlgs DialogCollection) GetAll() DialogCollection {
 	return dlgs
 }
 
-func (dlgs DialogCollection) GetCommented() DialogCollection {
-	var dialogs DialogCollection
+// Get list dialog's in a SSA/ASS Script
+func (dlgs DialogCollection) Get(commented bool) (dialogs DialogCollection) {
 	for _, d := range dlgs {
-		if d.Comment {
+		if d.Comment == commented {
 			dialogs = append(dialogs, d)
 		}
 	}
 	return dialogs
 }
 
+// GetCommented list only the commented dialog's in a SSA/ASS Script
+func (dlgs DialogCollection) GetCommented() DialogCollection {
+	return dlgs.Get(true)
+}
+
+// GetNotCommented list only the not commented dialog's in a SSA/ASS Script
 func (dlgs DialogCollection) GetNotCommented() DialogCollection {
-	var dialogs DialogCollection
-	for _, d := range dlgs {
-		if !d.Comment {
-			dialogs = append(dialogs, d)
-		}
-	}
-	return dialogs
+	return dlgs.Get(false)
 }
 
 // Style represent Subtitle Style.
@@ -90,21 +92,74 @@ type Script struct {
 	Audio              string
 }
 
-// Read parse and read an SSA/ASS Subtitle Script.
-func Read(filename string) (script Script) {
+func parseDialog(key, value string) *Dialog {
+	d := strings.SplitN(value, ",", 10)
+	return &Dialog{
+		Layer:     utils.Str2int(d[0]),
+		Start:     d[1],
+		End:       d[2],
+		StyleName: d[3],
+		Actor:     d[4],
+		Margin: [3]int{
+			utils.Str2int(d[5]), // L
+			utils.Str2int(d[6]), // R
+			utils.Str2int(d[7]), // V
+		},
+		Effect:  d[8],
+		Text:    strings.TrimSpace(d[9]),
+		Comment: key == "comment",
+	}
+}
 
-	file, err := os.Open(filename)
+func parseStyle(value string) *Style {
+	sty := strings.SplitN(value, ",", 23)
+	return &Style{
+		Name:     sty[0],
+		FontName: sty[1],
+		FontSize: utils.Str2int(sty[2]),
+		Color: [4]string{
+			sty[3],  // Primary
+			sty[4],  // Secondary
+			sty[5],  // Bord
+			sty[6]}, // Shadow
+		Bold:      utils.Str2bool(sty[7]),
+		Italic:    utils.Str2bool(sty[8]),
+		Underline: utils.Str2bool(sty[9]),
+		StrikeOut: utils.Str2bool(sty[10]),
+		Scale: [2]float64{
+			utils.Str2float(sty[11]), // X
+			utils.Str2float(sty[12]), // Y
+		},
+		Spacing:   utils.Str2int(sty[13]),
+		Angle:     utils.Str2int(sty[14]),
+		OpaqueBox: utils.Obox2bool(sty[15]),
+		Bord:      utils.Str2float(sty[16]),
+		Shadow:    utils.Str2float(sty[17]),
+		Alignment: utils.Str2int(sty[18]),
+		Margin: [3]int{
+			utils.Str2int(sty[19]),
+			utils.Str2int(sty[20]),
+			utils.Str2int(sty[21]),
+		},
+		Encoding: utils.Str2int(sty[22]),
+	}
+}
+
+// Read parse and read an SSA/ASS Subtitle Script.
+func Read(fn string) (s Script) {
+
+	f, err := os.Open(fn)
 	if err != nil {
 		panic(fmt.Errorf("reader: failed opening subtitle file: %s", err))
 	}
-	defer file.Close()
+	defer f.Close()
 
-	script.Style = make(map[string]*Style)
-	script.StyleUsed = make(map[string]*Style)
+	s.Style = make(map[string]*Style)
+	s.StyleUsed = make(map[string]*Style)
 	var playresx, playresy int
 	var videozoom, videoar float64
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, ";") ||
@@ -124,60 +179,18 @@ func Read(filename string) (script Script) {
 
 		switch key {
 		case "dialogue", "comment":
-			d := strings.SplitN(value, ",", 10)
-			dialog := &Dialog{
-				Layer:     utils.Str2int(d[0]),
-				Start:     d[1],
-				End:       d[2],
-				StyleName: d[3],
-				Actor:     d[4],
-				Margin: [3]int{
-					utils.Str2int(d[5]),
-					utils.Str2int(d[6]),
-					utils.Str2int(d[7]),
-				},
-				Effect:  d[8],
-				Text:    strings.TrimSpace(d[9]),
-				Comment: key == "comment",
-			}
-			script.Dialog = append(script.Dialog, dialog)
+			s.Dialog = append(s.Dialog, parseDialog(key, value))
 		case "style":
-			s := strings.SplitN(value, ",", 23)
-			style := &Style{
-				Name:      s[0],
-				FontName:  s[1],
-				FontSize:  utils.Str2int(s[2]),
-				Color:     [4]string{s[3], s[4], s[5], s[6]},
-				Bold:      utils.Str2bool(s[7]),
-				Italic:    utils.Str2bool(s[8]),
-				Underline: utils.Str2bool(s[9]),
-				StrikeOut: utils.Str2bool(s[10]),
-				Scale: [2]float64{
-					utils.Str2float(s[11]),
-					utils.Str2float(s[12]),
-				},
-				Spacing:   utils.Str2int(s[13]),
-				Angle:     utils.Str2int(s[14]),
-				OpaqueBox: utils.Obox2bool(s[15]),
-				Bord:      utils.Str2float(s[16]),
-				Shadow:    utils.Str2float(s[17]),
-				Alignment: utils.Str2int(s[18]),
-				Margin: [3]int{
-					utils.Str2int(s[19]),
-					utils.Str2int(s[20]),
-					utils.Str2int(s[21]),
-				},
-				Encoding: utils.Str2int(s[22]),
-			}
-			script.Style[style.Name] = style
+			style := parseStyle(value)
+			s.Style[style.Name] = style
 		case "playresx":
 			playresx = utils.Str2int(value)
 		case "playresy":
 			playresy = utils.Str2int(value)
 		case "audio_uri", "audio_file":
-			script.Audio = value
+			s.Audio = value
 		case "video_file":
-			script.VideoPath = value
+			s.VideoPath = value
 		case "video_zoom_percent":
 			videozoom = utils.Str2float(value)
 		case "video_zoom":
@@ -198,35 +211,35 @@ func Read(filename string) (script Script) {
 			} else {
 				videoar = utils.Str2float(ar)
 			}
-			script.VideoAR = videoar
+			s.VideoAR = videoar
 		case "video_position":
-			script.VideoPosition = utils.Str2int(value)
+			s.VideoPosition = utils.Str2int(value)
 		case "title":
-			script.MetaTitle = value
+			s.MetaTitle = value
 		case "original_script":
-			script.MetaOriginalScript = value
+			s.MetaOriginalScript = value
 		case "translation":
-			script.MetaTranslation = value
+			s.MetaTranslation = value
 		case "timing":
-			script.MetaTiming = value
+			s.MetaTiming = value
 		default:
 			continue
 		}
 	}
 
-	script.Resolution = [2]int{playresx, playresy}
-	script.VideoZoom = videozoom
-	script.MetaFilename = filename
+	s.Resolution = [2]int{playresx, playresy}
+	s.VideoZoom = videozoom
+	s.MetaFilename = fn
 
 	// Get only the styles used in dialogs
-	for _, d := range script.Dialog {
-		style, ok := script.Style[d.StyleName]
+	for _, d := range s.Dialog {
+		sty, ok := s.Style[d.StyleName]
 		if !ok {
-			style = script.Style["Default"]
+			sty = s.Style["Default"]
 		}
-		d.Style = style
+		d.Style = sty
 		if !d.Comment {
-			script.StyleUsed[d.StyleName] = style
+			s.StyleUsed[d.StyleName] = sty
 		}
 	}
 

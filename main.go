@@ -1,22 +1,21 @@
 package main
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/Alquimista/eyecandy-go/reader"
+	_ "github.com/Alquimista/eyecandy-go/utils"
 	"github.com/Alquimista/eyecandy-go/writer"
 )
 
 // compile passing -ldflags "-X main.Build <build sha1>
 // git rev-parse --short HEAD
-var Build string
+
+// var Build string
 
 func main() {
 	// fmt.Printf("Using build: %s\n", Build)
 
 	// filename := os.Args[1]
-	t0 := time.Now()
+	// t0 := time.Now()
 
 	input := reader.Read("test/test.ass")
 	output := writer.NewScript()
@@ -70,6 +69,8 @@ func main() {
 
 	output.Save("test/test.fx.ass")
 
-	elapsed := time.Since(t0)
-	fmt.Printf("\nTook %s\n", elapsed)
+	// ff, _ := utils.FontLoad("arial.ttf", 35)
+	// fmt.Println(utils.MeasureString(ff, "test"))
+	// elapsed := time.Since(t0)
+	// fmt.Printf("\nTook %s\n", elapsed)
 }

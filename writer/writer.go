@@ -1,5 +1,4 @@
-// writer SSA/ASS Subtitle Script Writer
-// package writer
+// Package writer create SSA/ASS Subtitle Script
 package writer
 
 import (
@@ -13,20 +12,20 @@ import (
 	"github.com/Alquimista/eyecandy-go/utils"
 )
 
-const DUMMY_VIDEO_TEMPLATE string = "?dummy:%.6f:%d:%d:%d:%d:%d:%d%s:"
-const DUMMY_AUDIO_TEMPLATE string = "dummy-audio:silence?sr=44100&bd=16&" +
+const dummyVideoTemplate string = "?dummy:%.6f:%d:%d:%d:%d:%d:%d%s:"
+const dummyAudioTemplate string = "dummy-audio:silence?sr=44100&bd=16&" +
 	"ch=1&ln=396900000:"
-const STYLE_FORMAT string = "Format: Name, Fontname, Fontsize, " +
+const styleFormat string = "Format: Name, Fontname, Fontsize, " +
 	"PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, " +
 	"Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, " +
 	"BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, " +
 	"Encoding"
-const STYLE_TEMPLATE string = "Style: %s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%.4f," +
+const styleTemplate string = "Style: %s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%.4f," +
 	"%.4f,%d,%d,%d,%.4f,%.4f,%d,%04d,%04d,%04d,%d"
-const DIALOG_FORMAT string = "Format: Layer, Start, End, Style, Name, " +
+const dialogFormat string = "Format: Layer, Start, End, Style, Name, " +
 	"MarginL, MarginR, MarginV, Effect, Text"
-const DIALOG_TEMPLATE string = "%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
-const SCRIPT_TEMPLATE string = `[Script Info]
+const dialogTemplate string = "%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
+const scriptTemplate string = `[Script Info]
 ; %s
 ScriptType: v4.00+
 Title: %s
@@ -55,10 +54,16 @@ Active Line: 1
 %s
 %s`
 
+// ALIGN SSA/ASS alignment map
 var ALIGN = make(map[string]int)
+
+// ENC SSA/ASS encoding map
 var ENC = make(map[string]int)
 
 func init() {
+
+	// ENC := NewCIMap()
+	// ALIGN := NewCIMap()
 
 	ALIGN["top left"] = 7
 	ALIGN["top center"] = 8
@@ -113,27 +118,25 @@ type Style struct {
 	Encoding  int
 }
 
-func (s *Style) toString() string {
-	opaquebox := 3
-	if !s.OpaqueBox {
-		opaquebox = 0
-	}
-	return fmt.Sprintf(STYLE_TEMPLATE,
-		s.Name,
-		s.FontName, s.FontSize,
-		s.Color[0], s.Color[1], s.Color[2], s.Color[3],
-		utils.Bool2str(s.Bold), utils.Bool2str(s.Italic),
-		utils.Bool2str(s.Underline), utils.Bool2str(s.StrikeOut),
-		s.Scale[0], s.Scale[1],
-		s.Spacing,
-		s.Angle,
-		opaquebox,
-		s.Bord, s.Shadow,
-		s.Alignment,
-		s.Margin[0], s.Margin[1], s.Margin[2],
-		s.Encoding)
+// toString get the generated Style as a String
+func (sty *Style) toString() string {
+	return fmt.Sprintf(styleTemplate,
+		sty.Name,
+		sty.FontName, sty.FontSize,
+		sty.Color[0], sty.Color[1], sty.Color[2], sty.Color[3],
+		utils.Bool2str(sty.Bold), utils.Bool2str(sty.Italic),
+		utils.Bool2str(sty.Underline), utils.Bool2str(sty.StrikeOut),
+		sty.Scale[0], sty.Scale[1],
+		sty.Spacing,
+		sty.Angle,
+		utils.Bool2Obox(sty.OpaqueBox),
+		sty.Bord, sty.Shadow,
+		sty.Alignment,
+		sty.Margin[0], sty.Margin[1], sty.Margin[2],
+		sty.Encoding)
 }
 
+// NewStyle create a new Style Struct with defaults
 func NewStyle(name string) *Style {
 	fontname := "Sans"
 	if runtime.GOOS == "windows" {
@@ -171,16 +174,17 @@ type Dialog struct {
 	Comment   bool
 }
 
+// toString get the generated Dialog as a String
 func (d *Dialog) toString() string {
 	text := d.Text
 	key := "Dialogue"
-	if d.Comment == true {
+	if d.Comment {
 		key = "Comment"
 	}
 	if d.Tags != "" {
 		text = "{" + d.Tags + "}" + d.Text
 	}
-	return fmt.Sprintf(DIALOG_TEMPLATE,
+	return fmt.Sprintf(dialogTemplate,
 		key,
 		d.Layer,
 		d.Start, d.End,
@@ -190,6 +194,7 @@ func (d *Dialog) toString() string {
 		text)
 }
 
+// NewDialog create a new Dialog Struct with defaults
 func NewDialog(text string) *Dialog {
 	return &Dialog{
 		StyleName: "Default",
@@ -198,7 +203,7 @@ func NewDialog(text string) *Dialog {
 }
 
 // Script SSA/ASS Subtitle Script.
-type script struct {
+type Script struct {
 	Dialog             []*Dialog
 	Style              map[string]*Style
 	Comment            string
@@ -215,39 +220,44 @@ type script struct {
 	Audio              string
 }
 
-func (script *script) GetStyle(name string) *Style {
-	style, ok := script.Style[name]
+// GetStyle get the Style matching the argument name if exist
+// else return the Default Style
+func (s *Script) GetStyle(name string) *Style {
+	style, ok := s.Style[name]
 	if !ok {
-		style = script.Style["Default"]
+		style = s.Style["Default"]
 		style.Name = name
 	}
 	return style
 }
 
-func (script *script) styleExists(name string) bool {
-	_, ok := script.Style[name]
+// StyleExists get if a Style exists matching the argument name
+func (s *Script) StyleExists(name string) bool {
+	_, ok := s.Style[name]
 	return ok
 }
 
-func (script *script) AddStyle(s *Style) {
-	if !script.styleExists(s.Name) {
-		script.Style[s.Name] = s
+// AddStyle add a Style to SSA/ASS Script.
+func (s *Script) AddStyle(sty *Style) {
+	if !s.StyleExists(sty.Name) {
+		s.Style[sty.Name] = sty
 	}
 }
 
-func (s *script) AddDialog(d *Dialog) {
+// AddDialog add a Dialog to SSA/ASS Script.
+func (s *Script) AddDialog(d *Dialog) {
 	if d.Text != "" {
 		s.Dialog = append(s.Dialog, d)
 	}
 }
 
-func (s *script) ToString() string {
+// ToString get the generated SSA/ASS Script as a String
+func (s *Script) ToString() string {
 
-	defaultSTY := NewStyle("Default")
-	s.AddStyle(defaultSTY)
+	// Add default dialog and style
+	s.AddStyle(NewStyle("Default"))
 	if len(s.Dialog) == 0 {
-		defaultDLG := NewDialog("EyecandyFX")
-		s.AddDialog(defaultDLG)
+		s.AddDialog(NewDialog("EyecandyFX"))
 	}
 
 	if s.Resolution[0] == 0 || s.Resolution[1] == 0 {
@@ -264,21 +274,21 @@ func (s *script) ToString() string {
 	if s.VideoPath == "" {
 		// TODO: dummy video function
 		// Dummy video
-		framerate := asstime.FPS_NTSC_FILM
+		framerate := asstime.FpsNtscFilm
 		w, h := s.Resolution[0], s.Resolution[1]
 		r, g, b := 0, 0, 0
 		checkboard := "" // checkbord=True "c", checkboard=False ""
 		//TODO: GET THE MAXIMUM TIME DIALOG
 		frames := int(framerate) * 60 * 5
 		s.VideoPath = fmt.Sprintf(
-			DUMMY_VIDEO_TEMPLATE,
+			dummyVideoTemplate,
 			utils.Round(framerate, 3), frames, w, h, r, g, b, checkboard)
 	}
 	if s.VideoPath != "" {
 		// TODO: dummy audio function
 		// silence?, noise?
 		if strings.HasPrefix(s.VideoPath, "?dummy") {
-			s.Audio = DUMMY_AUDIO_TEMPLATE
+			s.Audio = dummyAudioTemplate
 		} else {
 			s.Audio = s.VideoPath
 		}
@@ -315,44 +325,42 @@ func (s *script) ToString() string {
 		}
 	}
 
-	return fmt.Sprintf(SCRIPT_TEMPLATE,
+	return fmt.Sprintf(scriptTemplate,
 		s.Comment,
 		s.MetaTitle, s.MetaOriginalScript,
 		s.MetaTranslation, s.MetaTiming,
 		s.Resolution[0], s.Resolution[1],
 		s.VideoPath, s.VideoAR, s.VideoZoom, s.VideoPosition,
 		s.Audio,
-		STYLE_FORMAT, styles.String(),
-		// STYLE_FORMAT, strings.Join(styles, "\n"),
-		DIALOG_FORMAT, dialogs.String())
+		styleFormat, styles.String(),
+		dialogFormat, dialogs.String())
 
 }
 
-// Write an SSA/ASS Subtitle Script.
 // FIXME: Aegisub could not narrow down character set to a single one
-func (s *script) Save(filename string) {
-	file, err := os.Create(filename)
+
+// Save write an SSA/ASS Subtitle Script.
+func (s *Script) Save(fn string) {
+	f, err := os.Create(fn)
 	if err != nil {
 		panic(fmt.Errorf("writer: failed saving subtitle file: %s", err))
 	}
-	defer file.Close()
+	defer f.Close()
 
-	s.MetaFilename = filename
-	// w := bufio.NewWriter(file)
-	// n, err := io.WriteString(file, s.ToString())
-	// n, err := w.WriteString(s.ToString())
-	n, err := file.WriteString(s.ToString())
+	s.MetaFilename = fn
+
+	n, err := f.WriteString(s.ToString())
 	if err != nil {
 		fmt.Println(n, err)
 	}
-	// w.Flush()
 
 	// save changes
-	err = file.Sync()
+	err = f.Sync()
 }
 
-func NewScript() *script {
-	return &script{
+// NewScript create a new Script Struct with defaults
+func NewScript() *Script {
+	return &Script{
 		Comment:   "Script generated by Eyecandy",
 		MetaTitle: "Default Eyecandy file",
 		VideoZoom: 0.75,
