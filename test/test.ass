@@ -14,13 +14,14 @@ Audio File: ../../../../../../python/github.com/alquimista/eyecandy_plus/tests/.
 Video File: ../../../../../../python/github.com/alquimista/eyecandy_plus/tests/../../../../../../Vídeos/Anime/OPED/FullMetal Alchemist/FullMetal Alchemist - NC OP 04.mkv
 Video AR Mode: 4
 Video AR Value: 1.333333
-Video Zoom Percent: 0.500000
+Video Zoom Percent: 1.000000
+Scroll Position: 6
 Active Line: 13
 Video Position: 1791
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,AllensHand,41,&H00A3A3A5,&H00DFDFDF,&H00363631,&H00000000,-1,0,0,0,100,100,0,0,1,1.2,0,7,20,30,10,1
+Style: Default,AlainasHand,42,&H00A3A3A5,&H00DFDFDF,&H00363631,&H00000000,-1,0,0,0,100,100,0,0,1,1.2,0,7,20,30,10,1
 Style: Drawings,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,2,0,0,0,1
 
 [Events]

@@ -5,33 +5,38 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/Alquimista/eyecandy/utils"
 )
 
+var SSAColorLong = regexp.MustCompile(
+	`&H([0-9A-Fa-f]{2})` + // alpha
+		`([0-9A-Fa-f]{2})` + // blue component
+		`([0-9A-Fa-f]{2})` + // green
+		`([0-9A-Fa-f]{2})`) // red
+// var SSAColor = regexp.MustCompile(
+// 	`&H([0-9A-Fa-f]{2})` + // blue component
+// 		`([0-9A-Fa-f]{2})` + // green
+// 		`([0-9A-Fa-f]{2})&`) // red
+
 // Dialog Represent the subtitle's lines.
 type Dialog struct {
 	Layer     int
-	Start     string
-	End       string
+	StartTime string
+	EndTime   string
 	StyleName string
 	Style     *Style
 	Actor     string
 	Effect    string
 	Text      string
 	Tags      string
-	Margin    [3]int // L, R, V map[string]string
 	Comment   bool
 }
 
 // DialogCollection collection of Dialog's in a SSA/ASS Script
 type DialogCollection []*Dialog
-
-// All list all the dialog's in a SSA/ASS Script
-// func (dlgs DialogCollection) All() DialogCollection {
-// 	return dlgs
-// }
 
 // get list dialog's in a SSA/ASS Script
 func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
@@ -58,19 +63,20 @@ type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
-	Color     [4]string //Primary, Secondary, Bord, Shadow map[string]string
+	Color     [4]string //Primary, Secondary, Bord, Shadow
+	Alpha     [4]int    //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
 	StrikeOut bool
-	Scale     [2]float64 // WIDTH, HEIGHT map[string]string
-	Spacing   int
+	Scale     [2]float64 // WIDTH, HEIGHT
+	Spacing   float64
 	Angle     int
 	OpaqueBox bool
 	Bord      float64
 	Shadow    float64
 	Alignment int
-	Margin    [3]int // L, R, V map[string]string
+	Margin    [3]int // L, R, V
 	Encoding  int
 }
 
@@ -79,7 +85,7 @@ type Script struct {
 	Dialog             DialogCollection
 	Style              map[string]*Style
 	StyleUsed          map[string]*Style
-	Resolution         [2]int // WIDTH, HEIGHT map[string]string
+	Resolution         [2]int // WIDTH, HEIGHT
 	VideoPath          string
 	VideoZoom          float64
 	VideoPosition      int
@@ -94,36 +100,56 @@ type Script struct {
 
 // parseStyle parse an SSA/ASS Subtitle Dialog.
 func parseDialog(key, value string) *Dialog {
+	// TODO ?: use sprintf
 	d := strings.SplitN(value, ",", 10)
 	return &Dialog{
 		Layer:     utils.Str2int(d[0]),
-		Start:     d[1],
-		End:       d[2],
+		StartTime: d[1],
+		EndTime:   d[2],
 		StyleName: d[3],
 		Actor:     d[4],
-		Margin: [3]int{
-			utils.Str2int(d[5]), // L
-			utils.Str2int(d[6]), // R
-			utils.Str2int(d[7]), // V
-		},
-		Effect:  d[8],
-		Text:    strings.TrimSpace(d[9]),
-		Comment: key == "comment",
+		Effect:    d[8],
+		Text:      strings.TrimSpace(d[9]),
+		Comment:   key == "comment",
 	}
 }
 
 // parseStyle parse an SSA/ASS Subtitle Style.
 func parseStyle(value string) *Style {
+	// TODO ?: use sprintf
 	sty := strings.SplitN(value, ",", 23)
+
+	// 0: match, 1: alpha, 2: blue, 3: green, 4: red
+	color1 := SSAColorLong.FindStringSubmatch(sty[3])
+	c1 := "#" + color1[4] + color1[3] + color1[2]
+	a1 := utils.Hex2int(color1[1])
+
+	color2 := SSAColorLong.FindStringSubmatch(sty[4])
+	c2 := "#" + color2[4] + color2[3] + color2[2]
+	a2 := utils.Hex2int(color2[1])
+
+	color3 := SSAColorLong.FindStringSubmatch(sty[5])
+	c3 := "#" + color3[4] + color3[3] + color3[2]
+	a3 := utils.Hex2int(color3[1])
+
+	color4 := SSAColorLong.FindStringSubmatch(sty[6])
+	c4 := "#" + color4[4] + color4[3] + color4[2]
+	a4 := utils.Hex2int(color4[1])
+
 	return &Style{
 		Name:     sty[0],
 		FontName: sty[1],
 		FontSize: utils.Str2int(sty[2]),
 		Color: [4]string{
-			sty[3],  // Primary
-			sty[4],  // Secondary
-			sty[5],  // Bord
-			sty[6]}, // Shadow
+			c1,  // Primary
+			c2,  // Secondary
+			c3,  // Bord
+			c4}, // Shadow
+		Alpha: [4]int{
+			a1,  // Primary
+			a2,  // Secondary
+			a3,  // Bord
+			a4}, // Shadow
 		Bold:      utils.Str2bool(sty[7]),
 		Italic:    utils.Str2bool(sty[8]),
 		Underline: utils.Str2bool(sty[9]),
@@ -132,7 +158,7 @@ func parseStyle(value string) *Style {
 			utils.Str2float(sty[11]), // X
 			utils.Str2float(sty[12]), // Y
 		},
-		Spacing:   utils.Str2int(sty[13]),
+		Spacing:   utils.Str2float(sty[13]),
 		Angle:     utils.Str2int(sty[14]),
 		OpaqueBox: utils.Obox2bool(sty[15]),
 		Bord:      utils.Str2float(sty[16]),
@@ -143,13 +169,13 @@ func parseStyle(value string) *Style {
 			utils.Str2int(sty[20]), // R
 			utils.Str2int(sty[21]), // V
 		},
-		Encoding: utils.Str2int(sty[22]),
 	}
 }
 
 // Read parse and read an SSA/ASS Subtitle Script.
-func Read(fn string) (s Script) {
+func Read(fn string) *Script {
 
+	s := &Script{}
 	f, err := os.Open(fn)
 	if err != nil {
 		panic(fmt.Errorf("reader: failed opening subtitle file: %s", err))
@@ -175,6 +201,7 @@ func Read(fn string) (s Script) {
 			continue
 		}
 		key, value := keyvalue[0], keyvalue[1]
+		key = strings.TrimSpace(key)
 		key = strings.ToLower(key)
 		key = strings.Replace(key, " ", "_", -1)
 		value = strings.TrimSpace(value)
@@ -245,5 +272,5 @@ func Read(fn string) (s Script) {
 		}
 	}
 
-	return
+	return s
 }

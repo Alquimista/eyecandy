@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	// "github.com/flopp/go-findfont"
-	// "github.com/golang/freetype/truetype"
-	// "golang.org/x/image/font"
+
+	"github.com/Alquimista/fonts"
+	"github.com/golang/freetype/truetype"
+
+	"golang.org/x/image/font"
 )
+
+func DivMod(a, b int) (q, r int) {
+	return int(a / b), a % b
+}
 
 // Str2int convert a string to an integer.
 func Str2int(s string) int {
@@ -19,13 +25,18 @@ func Str2int(s string) int {
 	return i
 }
 
-// Str2bool convert a string to a boolean.
-func Str2bool(s string) bool {
-	i, err := strconv.Atoi(s)
+func Hex2int(hexStr string) int {
+	// base 16 for hexadecimal
+	i, err := strconv.ParseInt(hexStr, 16, 64)
 	if err != nil {
-		panic(fmt.Errorf("reader: failed parsing boolean: %s", err))
+		panic(fmt.Errorf("reader: failed parsing hex: %s", err))
 	}
-	return i != 0
+	return int(i)
+}
+
+// Str2bool convert a string (ssa) to a boolean.
+func Str2bool(s string) bool {
+	return s == "-1"
 }
 
 // Obox2bool convert a string to a boolean (Opaquebox ass format).
@@ -97,54 +108,30 @@ func AppendStrUnique(slice []string, s string) []string {
 	return append(slice, s)
 }
 
-// // /usr/share/fonts
-// // ~/.fonts
-// // MeasureString returns the rendered width and height of the specified text
-// // given the current font face.
-// func MeasureString(ff font.Face, s string) (w float64) {
-// 	d := &font.Drawer{Face: ff}
-// 	a := d.MeasureString(s)
-// 	// return float64(a >> 6), dc.fontHeight
-// 	return float64(a >> 6)
-// }
+// MeasureString returns the rendered width and height of the specified text
+// given the current font face.
+func MeasureString(ff font.Face, s string) (w float64, h float64) {
+	d := &font.Drawer{Face: ff}
+	return float64(d.MeasureString(s) >> 6),
+		float64(ff.Metrics().Height>>6) * 96.0 / 72.0
+}
 
-// func FontLoad(fontName string, fontSize float64) (font.Face, error) {
+func FontLoad(fontName string, fontSize int) (font.Face, error) {
 
-// 	fontPath, err := findfont.Find(fontName)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	fontBytes, err := ioutil.ReadFile(fontPath)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	fontFace, err := truetype.Parse(fontBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	face := truetype.NewFace(fontFace, &truetype.Options{
-// 		Size:    fontSize,
-// 		DPI:     72,
-// 		Hinting: font.HintingNone,
-// 		// Hinting: font.HintingFull,
-// 	})
-// 	return face, nil
-// }
-
-// type CIMap struct {
-// 	m map[string]string
-// }
-
-// func NewCIMap() CIMap {
-// 	return CIMap{m: make(map[string]int)}
-// }
-
-// func (m CIMap) Set(k string, v int) {
-// 	m.m[strings.ToLower(k)] = v
-// }
-
-// func (m CIMap) Get(s string) (i int, ok bool) {
-// 	i, ok = m.m[strings.ToLower(s)]
-// 	return
-// }
+	// TODO: select the correct font path
+	fontBytes, err := fonts.LoadFont(fontName)
+	if err != nil {
+		return nil, err
+	}
+	fontFace, err := truetype.Parse(fontBytes)
+	if err != nil {
+		return nil, err
+	}
+	face := truetype.NewFace(fontFace, &truetype.Options{
+		Size:    float64(fontSize) * 72.0 / 96.0,
+		DPI:     72,
+		Hinting: font.HintingNone,
+		// Hinting: font.HintingFull,
+	})
+	return face, nil
+}

@@ -5,40 +5,40 @@ import (
 	"time"
 
 	"github.com/Alquimista/eyecandy"
-	// "github.com/Alquimista/eyecandy/utils"
 )
 
-func main() {
-	// fmt.Printf("Using build: %s\n", Build)
+const (
+	InputScript = "test/test.ass"
+	OuputScript = "test/test.fx.ass"
+)
 
-	// filename := os.Args[1]
-	t0 := time.Now()
+func doFX() {
+	subs := eyecandy.NewEffect(InputScript)
+	for _, line := range subs.Lines() {
 
-	subs := eyecandy.NewEffect("test/test.ass")
+		for _, syl := range line.Syls() {
 
-	// fmt.Println(subs.Resolution)
-	// fmt.Println(subs.VideoPath)
-	// fmt.Println(subs.VideoZoom)
-	// fmt.Println(subs.VideoPosition)
-	// fmt.Println(subs.VideoAR)
-	// fmt.Println(subs.MetaFilename)
-	// fmt.Println(subs.MetaTitle)
-	// fmt.Println(subs.MetaOriginalScript)
-	// fmt.Println(subs.MetaTranslation)
-	// fmt.Println(subs.MetaTiming)
-	// fmt.Println(subs.Audio)
+			s := subs.CopySyl(syl) // *syl
+			s.StartTime = line.StartTime - 50
+			s.EndTime = line.EndTime + 50
+			s.Tags = fmt.Sprintf(`\pos(%g,%g)\fad(100,100)\blur0.3\1c&H705F05&\3c&HFFFAB5&\bord1.2\shad1`, s.X, s.Y)
+			subs.Add(s)
 
-	// subs.Resolution = [2]int{640, 480}
-
-	for _, dlg := range subs.Dialogs() {
-
-		d := dlg
-		d.Tags = "\\blur0.3\\1c&H705F05&\\2c&H2B0C00&\\3c&HFFFAB5&\\bord1.6\\shad1"
-		subs.AddDialog(d)
-
+			s = subs.CopySyl(syl) // *syl
+			s.Layer = 1
+			s.Tags = fmt.Sprintf(`\pos(%g,%g)\blur0.3\bord0`, s.X, s.Y)
+			subs.Add(s)
+		}
 	}
-	subs.Save("test/test.fx.ass")
+	subs.Save(OuputScript)
+}
 
+func main() {
+
+	t0 := time.Now()
+	doFX()
 	elapsed := time.Since(t0)
+
 	fmt.Printf("\nTook %s\n", elapsed)
+
 }

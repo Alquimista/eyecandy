@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"runtime"
+	"regexp"
 	"strings"
 
 	"github.com/Alquimista/eyecandy/asstime"
@@ -21,10 +21,10 @@ const styleFormat string = "Format: Name, Fontname, Fontsize, " +
 	"BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, " +
 	"Encoding"
 const styleTemplate string = "Style: %s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%.4f," +
-	"%.4f,%d,%d,%d,%.4f,%.4f,%d,%04d,%04d,%04d,%d"
+	"%.4f,%.1f,%d,%d,%.4f,%.4f,%d,%04d,%04d,%04d,1"
 const dialogFormat string = "Format: Layer, Start, End, Style, Name, " +
 	"MarginL, MarginR, MarginV, Effect, Text"
-const dialogTemplate string = "%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
+const dialogTemplate string = "%s: %d,%s,%s,%s,%s,0000,0000,0000,%s,%s"
 const scriptTemplate string = `[Script Info]
 ; %s
 ScriptType: v4.00+
@@ -54,61 +54,38 @@ Active Line: 1
 %s
 %s`
 
-// ALIGN SSA/ASS alignment map
-var ALIGN = make(map[string]int)
+const (
+	AlignBottomLeft int = 1 + iota
+	AlignBottomCenter
+	AlignBottomRight
 
-// ENC SSA/ASS encoding map
-var ENC = make(map[string]int)
+	AlignMiddleLeft
+	AlignMiddleCenter
+	AlignMiddleRight
 
-func init() {
+	AlignTopLeft
+	AlignTopCenter
+	AlignTopRight
+)
 
-	// ENC := NewCIMap()
-	// ALIGN := NewCIMap()
-
-	ALIGN["top left"] = 7
-	ALIGN["top center"] = 8
-	ALIGN["top right"] = 9
-	ALIGN["middle left"] = 4
-	ALIGN["middle center"] = 5
-	ALIGN["middle right"] = 6
-	ALIGN["bottom left"] = 1
-	ALIGN["bottom center"] = 2
-	ALIGN["bottom right"] = 3
-
-	ENC["ansi"] = 0
-	ENC["default"] = 1
-	ENC["symbol"] = 2
-	ENC["mac"] = 77
-	ENC["shift_jis"] = 128
-	ENC["hangeul"] = 129
-	ENC["johab"] = 130
-	ENC["gb2312"] = 134
-	ENC["chinese big5"] = 136
-	ENC["greek"] = 161
-	ENC["turkish"] = 162
-	ENC["Vietnamese"] = 163
-	ENC["hebrew"] = 177
-	ENC["arabic"] = 178
-	ENC["baltic"] = 186
-	ENC["russian"] = 204
-	ENC["thai"] = 222
-	ENC["east european"] = 238
-	ENC["oem"] = 255
-
-}
+var HEXColor = regexp.MustCompile(
+	`#([0-9A-Fa-f]{2})` + // red component
+		`([0-9A-Fa-f]{2})` + // green
+		`([0-9A-Fa-f]{2})`) // blue
 
 // Style represent subtitle"s styles.
 type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
-	Color     [4]string //Primary, Secondary, Bord, Shadow map[string]string
+	Color     [4]string //Primary, Secondary, Bord, Shadow
+	Alpha     [4]int    //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
 	StrikeOut bool
 	Scale     [2]float64 // WIDTH, HEIGHT map[string]string
-	Spacing   int
+	Spacing   float64
 	Angle     int
 	OpaqueBox bool
 	Bord      float64
@@ -120,10 +97,29 @@ type Style struct {
 
 // String get the generated Style as a String
 func (sty *Style) String() string {
+
+	ColorTemplate := "&H%02X%s%s%s"
+	// 0: match, 1: red, 2: green, 3: blue
+	color1 := HEXColor.FindStringSubmatch(sty.Color[0])
+	c1 := fmt.Sprintf(ColorTemplate,
+		sty.Alpha[0], color1[3], color1[2], color1[1])
+
+	color2 := HEXColor.FindStringSubmatch(sty.Color[1])
+	c2 := fmt.Sprintf(ColorTemplate,
+		sty.Alpha[1], color2[3], color2[2], color2[1])
+
+	color3 := HEXColor.FindStringSubmatch(sty.Color[2])
+	c3 := fmt.Sprintf(ColorTemplate,
+		sty.Alpha[2], color3[3], color3[2], color3[1])
+
+	color4 := HEXColor.FindStringSubmatch(sty.Color[3])
+	c4 := fmt.Sprintf(ColorTemplate,
+		sty.Alpha[3], color4[3], color4[2], color4[1])
+
 	return fmt.Sprintf(styleTemplate,
 		sty.Name,
 		sty.FontName, sty.FontSize,
-		sty.Color[0], sty.Color[1], sty.Color[2], sty.Color[3],
+		c1, c2, c3, c4,
 		utils.Bool2str(sty.Bold), utils.Bool2str(sty.Italic),
 		utils.Bool2str(sty.Underline), utils.Bool2str(sty.StrikeOut),
 		sty.Scale[0], sty.Scale[1],
@@ -133,31 +129,30 @@ func (sty *Style) String() string {
 		sty.Bord, sty.Shadow,
 		sty.Alignment,
 		sty.Margin[0], sty.Margin[1], sty.Margin[2],
-		sty.Encoding)
+	)
 }
 
 // NewStyle create a new Style Struct with defaults
 func NewStyle(name string) *Style {
-	fontname := "Sans"
-	// TODO: GO GENERATE FOR DIFERENT PLATFORM CASES
-	if runtime.GOOS == "windows" {
-		fontname = "Arial"
-	}
+	// fontname := "Sans"
+	// if runtime.GOOS == "windows" {
+	// 	fontname = "Arial"
+	// }
+	fontname := "Arial"
 	return &Style{
 		Name:     name,
 		FontName: fontname,
 		FontSize: 35,
 		Color: [4]string{
-			"&H00FFFFFF", //Primary
-			"&H000000FF", //Secondary
-			"&H00000000", //Bord
-			"&H00000000", //Shadow
+			"#FFFFFF", //Primary
+			"#0000FF", //Secondary
+			"#000000", //Bord
+			"#000000", //Shadow
 		},
 		Scale:     [2]float64{100, 100},
 		Bord:      2,
-		Alignment: ALIGN["bottom center"],
+		Alignment: AlignBottomCenter,
 		Margin:    [3]int{10, 20, 10},
-		Encoding:  ENC["default"],
 	}
 }
 
@@ -171,7 +166,6 @@ type Dialog struct {
 	Effect    string
 	Text      string
 	Tags      string
-	Margin    [3]int // L, R, V map[string]string
 	Comment   bool
 }
 
@@ -190,7 +184,6 @@ func (d *Dialog) String() string {
 		d.Layer,
 		d.Start, d.End,
 		d.StyleName, d.Actor,
-		d.Margin[0], d.Margin[1], d.Margin[2],
 		d.Effect,
 		text)
 }
@@ -338,10 +331,10 @@ func (s *Script) String() string {
 
 }
 
-// FIXME: Aegisub could not narrow down character set to a single one
-
 // Save write an SSA/ASS Subtitle Script.
 func (s *Script) Save(fn string) {
+
+	BOM := "\uFEFF"
 	f, err := os.Create(fn)
 	if err != nil {
 		panic(fmt.Errorf("writer: failed saving subtitle file: %s", err))
@@ -350,7 +343,7 @@ func (s *Script) Save(fn string) {
 
 	s.MetaFilename = fn
 
-	n, err := f.WriteString(s.String())
+	n, err := f.WriteString(BOM + s.String())
 	if err != nil {
 		fmt.Println(n, err)
 	}
