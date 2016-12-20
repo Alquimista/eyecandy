@@ -8,18 +8,29 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Alquimista/eyecandy/color"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
+const (
+	AlignBottomLeft int = 1 + iota
+	AlignBottomCenter
+	AlignBottomRight
+
+	AlignMiddleLeft
+	AlignMiddleCenter
+	AlignMiddleRight
+
+	AlignTopLeft
+	AlignTopCenter
+	AlignTopRight
+)
+
 var SSAColorLong = regexp.MustCompile(
-	`&H([0-9A-Fa-f]{2})` + // alpha
+	`&H([0-9A-Fa-f]{2})*` + // alpha
 		`([0-9A-Fa-f]{2})` + // blue component
 		`([0-9A-Fa-f]{2})` + // green
 		`([0-9A-Fa-f]{2})`) // red
-// var SSAColor = regexp.MustCompile(
-// 	`&H([0-9A-Fa-f]{2})` + // blue component
-// 		`([0-9A-Fa-f]{2})` + // green
-// 		`([0-9A-Fa-f]{2})&`) // red
 
 // Dialog Represent the subtitle's lines.
 type Dialog struct {
@@ -64,7 +75,7 @@ type Style struct {
 	FontName  string
 	FontSize  int
 	Color     [4]string //Primary, Secondary, Bord, Shadow
-	Alpha     [4]int    //Primary, Secondary, Bord, Shadow
+	Alpha     [4]uint8  //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
@@ -78,6 +89,30 @@ type Style struct {
 	Alignment int
 	Margin    [3]int // L, R, V
 	Encoding  int
+}
+
+// NewStyle create a new Style Struct with defaults
+func NewStyle(name string) *Style {
+	// fontname := "Sans"
+	// if runtime.GOOS == "windows" {
+	// 	fontname = "Arial"
+	// }
+	fontname := "Arial"
+	return &Style{
+		Name:     name,
+		FontName: fontname,
+		FontSize: 35,
+		Color: [4]string{
+			"#FFFFFF", //Primary
+			"#0000FF", //Secondary
+			"#000000", //Bord
+			"#000000", //Shadow
+		},
+		Scale:     [2]float64{100, 100},
+		Bord:      2,
+		Alignment: AlignBottomCenter,
+		Margin:    [3]int{10, 20, 10},
+	}
 }
 
 // Script SSA/ASS Subtitle Script.
@@ -119,22 +154,10 @@ func parseStyle(value string) *Style {
 	// TODO ?: use sprintf
 	sty := strings.SplitN(value, ",", 23)
 
-	// 0: match, 1: alpha, 2: blue, 3: green, 4: red
-	color1 := SSAColorLong.FindStringSubmatch(sty[3])
-	c1 := "#" + color1[4] + color1[3] + color1[2]
-	a1 := utils.Hex2int(color1[1])
-
-	color2 := SSAColorLong.FindStringSubmatch(sty[4])
-	c2 := "#" + color2[4] + color2[3] + color2[2]
-	a2 := utils.Hex2int(color2[1])
-
-	color3 := SSAColorLong.FindStringSubmatch(sty[5])
-	c3 := "#" + color3[4] + color3[3] + color3[2]
-	a3 := utils.Hex2int(color3[1])
-
-	color4 := SSAColorLong.FindStringSubmatch(sty[6])
-	c4 := "#" + color4[4] + color4[3] + color4[2]
-	a4 := utils.Hex2int(color4[1])
+	c1, a1 := color.SSALtoHEXAlpha(sty[3])
+	c2, a2 := color.SSALtoHEXAlpha(sty[4])
+	c3, a3 := color.SSALtoHEXAlpha(sty[5])
+	c4, a4 := color.SSALtoHEXAlpha(sty[6])
 
 	return &Style{
 		Name:     sty[0],
@@ -145,11 +168,11 @@ func parseStyle(value string) *Style {
 			c2,  // Secondary
 			c3,  // Bord
 			c4}, // Shadow
-		Alpha: [4]int{
-			a1,  // Primary
-			a2,  // Secondary
-			a3,  // Bord
-			a4}, // Shadow
+		Alpha: [4]uint8{
+			uint8(a1),  // Primary
+			uint8(a2),  // Secondary
+			uint8(a3),  // Bord
+			uint8(a4)}, // Shadow
 		Bold:      utils.Str2bool(sty[7]),
 		Italic:    utils.Str2bool(sty[8]),
 		Underline: utils.Str2bool(sty[9]),

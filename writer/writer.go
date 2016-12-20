@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/Alquimista/eyecandy/asstime"
+	"github.com/Alquimista/eyecandy/color"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
@@ -27,11 +27,11 @@ const dialogFormat string = "Format: Layer, Start, End, Style, Name, " +
 const dialogTemplate string = "%s: %d,%s,%s,%s,%s,0000,0000,0000,%s,%s"
 const scriptTemplate string = `[Script Info]
 ; %s
-ScriptType: v4.00+
 Title: %s
 Original Script: %s
 Translation: %s
 Timing: %s
+ScriptType: v4.00+
 PlayResX: %d
 PlayResY: %d
 WrapStyle: 2
@@ -68,18 +68,13 @@ const (
 	AlignTopRight
 )
 
-var HEXColor = regexp.MustCompile(
-	`#([0-9A-Fa-f]{2})` + // red component
-		`([0-9A-Fa-f]{2})` + // green
-		`([0-9A-Fa-f]{2})`) // blue
-
 // Style represent subtitle"s styles.
 type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
 	Color     [4]string //Primary, Secondary, Bord, Shadow
-	Alpha     [4]int    //Primary, Secondary, Bord, Shadow
+	Alpha     [4]uint8  //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
@@ -98,28 +93,13 @@ type Style struct {
 // String get the generated Style as a String
 func (sty *Style) String() string {
 
-	ColorTemplate := "&H%02X%s%s%s"
-	// 0: match, 1: red, 2: green, 3: blue
-	color1 := HEXColor.FindStringSubmatch(sty.Color[0])
-	c1 := fmt.Sprintf(ColorTemplate,
-		sty.Alpha[0], color1[3], color1[2], color1[1])
-
-	color2 := HEXColor.FindStringSubmatch(sty.Color[1])
-	c2 := fmt.Sprintf(ColorTemplate,
-		sty.Alpha[1], color2[3], color2[2], color2[1])
-
-	color3 := HEXColor.FindStringSubmatch(sty.Color[2])
-	c3 := fmt.Sprintf(ColorTemplate,
-		sty.Alpha[2], color3[3], color3[2], color3[1])
-
-	color4 := HEXColor.FindStringSubmatch(sty.Color[3])
-	c4 := fmt.Sprintf(ColorTemplate,
-		sty.Alpha[3], color4[3], color4[2], color4[1])
-
 	return fmt.Sprintf(styleTemplate,
 		sty.Name,
 		sty.FontName, sty.FontSize,
-		c1, c2, c3, c4,
+		color.HEXtoSSAL(sty.Color[0], sty.Alpha[0]),
+		color.HEXtoSSAL(sty.Color[1], sty.Alpha[1]),
+		color.HEXtoSSAL(sty.Color[2], sty.Alpha[2]),
+		color.HEXtoSSAL(sty.Color[3], sty.Alpha[3]),
 		utils.Bool2str(sty.Bold), utils.Bool2str(sty.Italic),
 		utils.Bool2str(sty.Underline), utils.Bool2str(sty.StrikeOut),
 		sty.Scale[0], sty.Scale[1],

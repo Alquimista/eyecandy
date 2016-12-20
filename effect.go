@@ -52,7 +52,9 @@ type Line struct {
 	Comment    bool
 	Kara       string
 	syls       [][]string
+	chars      [][]string
 	SylN       int
+	CharN      int
 	fontFace   font.Face
 	Width      float64
 	Height     float64
@@ -96,6 +98,131 @@ type Syl struct {
 	Right     float64
 }
 
+// Char Represent the subtitle"s lines.
+type Char struct {
+	Layer         int
+	StartTime     int
+	EndTime       int
+	Duration      int
+	MidTime       int
+	Style         *reader.Style
+	StyleName     string
+	Actor         string
+	Effect        string
+	Text          string
+	Tags          string
+	Comment       bool
+	Inline        string
+	Width         float64
+	Height        float64
+	Size          [2]float64
+	X             float64
+	Y             float64
+	Top           float64
+	Middle        float64
+	Bottom        float64
+	Left          float64
+	Center        float64
+	Right         float64
+	SylStartTime  int
+	SylEndTime    int
+	SylMidEndTime int
+	SylDuration   int
+}
+
+func (d *Line) Chars() (chars []*Char) {
+
+	start, end, x, dur := 0, 0, 0.0, 0
+	for _, s := range d.Syls() {
+
+		curX := float64(s.Left)
+		lineStart := s.StartTime
+		lineEnd := s.EndTime
+
+		charN := utils.LenString(s.Text)
+
+		// For syls of one char
+		if charN == 1 || charN == 0 {
+			dur = s.Duration
+		} else {
+			dur = int(s.Duration / charN)
+		}
+
+		for i, c := range s.Text {
+			text := string(c)
+
+			start = lineStart
+			lineStart += dur
+
+			width, _ := utils.MeasureString(d.fontFace, text)
+			width *= d.Style.Scale[0] / 100.0
+			middlewidth := float64(width) / 2.0
+
+			cleft := float64(curX)
+			ccenter := cleft + float64(middlewidth)
+			cright := cleft + float64(width)
+
+			align := d.Style.Alignment
+
+			switch align {
+			case 1, 4, 7: // left
+				x = cleft
+			case 2, 5, 8: // center
+				x = ccenter
+			case 3, 6, 9: // right
+				x = cright
+			}
+
+			if i == charN-1 {
+				// Ensure that the end time and the width of the last char
+				// is the same that the end time and width of the syl
+				end = lineEnd
+			} else {
+				end = lineStart
+			}
+
+			c := &Char{
+				Layer:     d.Layer,
+				Style:     d.Style,
+				StyleName: d.StyleName,
+				Actor:     d.Actor,
+				Effect:    d.Effect,
+				Tags:      d.Tags,
+				Comment:   d.Comment,
+				// Char
+				StartTime: start,
+				EndTime:   end,
+				Duration:  dur,
+				MidTime:   end - start,
+				Text:      text,
+				Inline:    s.Inline,
+				Width:     float64(width),
+				Height:    d.Height,
+				Size:      [2]float64{float64(width), d.Height},
+				X:         float64(x),
+				Y:         float64(d.Y),
+				Top:       float64(d.Top),
+				Middle:    float64(d.Middle),
+				Bottom:    float64(d.Bottom),
+				Left:      float64(cleft),
+				Center:    float64(ccenter),
+				Right:     float64(cright),
+				// Syl
+				SylStartTime:  s.StartTime,
+				SylEndTime:    s.EndTime,
+				SylMidEndTime: s.MidTime,
+				SylDuration:   s.Duration,
+			}
+
+			chars = append(chars, c)
+
+			curX += width
+		}
+	}
+	return chars
+
+}
+
 func (d *Line) Syls() (syls []*Syl) {
 
 	lineStart := d.StartTime
@@ -104,6 +231,7 @@ func (d *Line) Syls() (syls []*Syl) {
 	fontFace := d.fontFace
 
 	spaceWidth, _ := utils.MeasureString(fontFace, " ")
+	spaceWidth *= d.Style.Scale[0] / 100.0
 
 	curX := d.Left
 	maxWidth := 0.0
@@ -125,13 +253,11 @@ func (d *Line) Syls() (syls []*Syl) {
 			end = lineStart
 		}
 
-		strippedText := strings.TrimSpace(text)
-		postSpace := len([]rune(text)) -
-			len([]rune(strings.TrimRight(text, " ")))
-		preSpace := len([]rune(text)) -
-			len([]rune(strings.TrimLeft(text, " ")))
+		strippedText, preSpace, postSpace := utils.TrimSpaceCount(text)
 
 		width, height := utils.MeasureString(fontFace, strippedText)
+		width *= d.Style.Scale[0] / 100.0
+		height *= d.Height
 
 		middleheight := float64(height) / 2.0
 		middlewidth := float64(width) / 2.0
@@ -264,6 +390,8 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 
 		fontFace := fx.fontFace[dlg.StyleName]
 		width, height := utils.MeasureString(fontFace, text)
+		width *= dlg.Style.Scale[0] / 100.0
+		height *= dlg.Style.Scale[1] / 100.0
 
 		align := dlg.Style.Alignment
 		ml, mr, mv := float64(dlg.Style.Margin[0]),
@@ -358,11 +486,17 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 	return dialogs
 }
 
-func (fx *Effect) Styles() (dialogs map[string]*reader.Style) {
+func (fx *Effect) GetStyle(name string) (*reader.Style, bool) {
+	style, ok := fx.Styles()[name]
+	return style, ok
+}
+
+func (fx *Effect) Styles() map[string]*reader.Style {
 	return fx.scriptIn.StyleUsed
 }
 
 func (fx *Effect) AddStyle(sty *writer.Style) {
+	fx.scriptIn.StyleUsed[sty.Name] = reader.NewStyle(sty.Name)
 	fx.scriptOut.AddStyle(sty)
 }
 
@@ -374,9 +508,12 @@ func (fx *Effect) CopySyl(dialog *Syl) Syl {
 	return *dialog
 }
 
+func (fx *Effect) CopyChar(dialog *Char) Char {
+	return *dialog
+}
+
 func (fx *Effect) Add(dialog interface{}) {
 
-	//TODO: Type check (Line,Syl, Char)
 	switch dlg := dialog.(type) {
 	case Line:
 		d := NewDialog(dlg.Text)
@@ -400,17 +537,17 @@ func (fx *Effect) Add(dialog interface{}) {
 		d.Tags = dlg.Tags
 		d.Comment = dlg.Comment
 		fx.scriptOut.AddDialog(d)
-		// case *Char:
-		// 	d := NewDialog(dlg.Text)
-		// 	d.Layer = dlg.Layer
-		// 	d.Start = asstime.MStoSSA(dlg.StartTime)
-		// 	d.End = asstime.MStoSSA(dlg.EndTime)
-		// 	d.StyleName = dlg.StyleName
-		// 	d.Actor = dlg.Actor
-		// 	d.Effect = dlg.Effect
-		// 	d.Tags = dlg.Tags
-		// 	d.Comment = dlg.Comment
-		// 	fx.scriptOut.AddDialog(d)
+	case Char:
+		d := NewDialog(dlg.Text)
+		d.Layer = dlg.Layer
+		d.Start = asstime.MStoSSA(dlg.StartTime)
+		d.End = asstime.MStoSSA(dlg.EndTime)
+		d.StyleName = dlg.StyleName
+		d.Actor = dlg.Actor
+		d.Effect = dlg.Effect
+		d.Tags = dlg.Tags
+		d.Comment = dlg.Comment
+		fx.scriptOut.AddDialog(d)
 	default:
 		fmt.Println("Not admited object")
 	}
@@ -448,6 +585,7 @@ func NewEffect(inFN string) *Effect {
 		s.Bold = style.Bold
 		s.Italic = style.Italic
 		s.Scale = style.Scale
+		s.Angle = style.Angle
 		s.Bord = style.Bord
 		s.Shadow = style.Shadow
 		s.Alignment = style.Alignment
