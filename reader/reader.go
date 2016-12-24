@@ -28,11 +28,11 @@ type dialog struct {
 	Comment   bool
 }
 
-// dialogCollection collection of Dialog's in a SSA/ASS Script
-type dialogCollection []*dialog
+// DialogCollection collection of Dialog's in a SSA/ASS Script
+type DialogCollection []*dialog
 
 // get list dialog's in a SSA/ASS Script
-func (dlgs dialogCollection) get(commented bool) (dialogs dialogCollection) {
+func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
 	for _, d := range dlgs {
 		if d.Comment == commented {
 			dialogs = append(dialogs, d)
@@ -42,12 +42,12 @@ func (dlgs dialogCollection) get(commented bool) (dialogs dialogCollection) {
 }
 
 // Commented list only the commented dialog's in a SSA/ASS Script
-func (dlgs dialogCollection) Commented() dialogCollection {
+func (dlgs DialogCollection) Commented() DialogCollection {
 	return dlgs.get(true)
 }
 
 // NotCommented list only the not commented dialog's in a SSA/ASS Script
-func (dlgs dialogCollection) NotCommented() dialogCollection {
+func (dlgs DialogCollection) NotCommented() DialogCollection {
 	return dlgs.get(false)
 }
 
@@ -95,7 +95,7 @@ func NewStyle(name string) *Style {
 
 // Script SSA/ASS Subtitle Script.
 type Script struct {
-	Dialog             dialogCollection
+	Dialog             DialogCollection
 	Style              map[string]*Style
 	StyleUsed          map[string]*Style
 	Resolution         [2]int // WIDTH, HEIGHT
