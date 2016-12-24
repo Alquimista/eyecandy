@@ -392,7 +392,7 @@ type Script struct {
 	Audio              string
 }
 
-// List all the lines in a Script
+// Lines List all the lines in a Script
 func (fx *Script) Lines() (dialogs []*Line) {
 
 	resx, resy := float64(fx.Resolution[0]), float64(fx.Resolution[1])
