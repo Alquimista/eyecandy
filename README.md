@@ -1,4 +1,4 @@
-# eyecandy
+# eyecandy   [![Go Report Card](https://goreportcard.com/badge/github.com/Alquimista/eyecandy)](https://goreportcard.com/report/github.com/Alquimista/eyecandy)
 ASS(Advanced SubStation Alpha) karaoke effect generator (http://www.aegisub.org/)
 
 # Generated Docs
