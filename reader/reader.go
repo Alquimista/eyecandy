@@ -5,35 +5,17 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/Alquimista/eyecandy/color"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
-const (
-	AlignBottomLeft int = 1 + iota
-	AlignBottomCenter
-	AlignBottomRight
+// alignTopCenter SSA numbered Alignment
+const alignTopCenter int = 8
 
-	AlignMiddleLeft
-	AlignMiddleCenter
-	AlignMiddleRight
-
-	AlignTopLeft
-	AlignTopCenter
-	AlignTopRight
-)
-
-var SSAColorLong = regexp.MustCompile(
-	`&H([0-9A-Fa-f]{2})*` + // alpha
-		`([0-9A-Fa-f]{2})` + // blue component
-		`([0-9A-Fa-f]{2})` + // green
-		`([0-9A-Fa-f]{2})`) // red
-
-// Dialog Represent the subtitle's lines.
-type Dialog struct {
+// dialog Represent the subtitle's lines.
+type dialog struct {
 	Layer     int
 	StartTime string
 	EndTime   string
@@ -46,11 +28,11 @@ type Dialog struct {
 	Comment   bool
 }
 
-// DialogCollection collection of Dialog's in a SSA/ASS Script
-type DialogCollection []*Dialog
+// dialogCollection collection of Dialog's in a SSA/ASS Script
+type dialogCollection []*dialog
 
 // get list dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
+func (dlgs dialogCollection) get(commented bool) (dialogs dialogCollection) {
 	for _, d := range dlgs {
 		if d.Comment == commented {
 			dialogs = append(dialogs, d)
@@ -60,12 +42,12 @@ func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
 }
 
 // Commented list only the commented dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) Commented() DialogCollection {
+func (dlgs dialogCollection) Commented() dialogCollection {
 	return dlgs.get(true)
 }
 
 // NotCommented list only the not commented dialog's in a SSA/ASS Script
-func (dlgs DialogCollection) NotCommented() DialogCollection {
+func (dlgs dialogCollection) NotCommented() dialogCollection {
 	return dlgs.get(false)
 }
 
@@ -93,10 +75,6 @@ type Style struct {
 
 // NewStyle create a new Style Struct with defaults
 func NewStyle(name string) *Style {
-	// fontname := "Sans"
-	// if runtime.GOOS == "windows" {
-	// 	fontname = "Arial"
-	// }
 	fontname := "Arial"
 	return &Style{
 		Name:     name,
@@ -110,14 +88,14 @@ func NewStyle(name string) *Style {
 		},
 		Scale:     [2]float64{100, 100},
 		Bord:      2,
-		Alignment: AlignBottomCenter,
+		Alignment: alignTopCenter,
 		Margin:    [3]int{10, 20, 10},
 	}
 }
 
 // Script SSA/ASS Subtitle Script.
 type Script struct {
-	Dialog             DialogCollection
+	Dialog             dialogCollection
 	Style              map[string]*Style
 	StyleUsed          map[string]*Style
 	Resolution         [2]int // WIDTH, HEIGHT
@@ -134,10 +112,10 @@ type Script struct {
 }
 
 // parseStyle parse an SSA/ASS Subtitle Dialog.
-func parseDialog(key, value string) *Dialog {
+func parseDialog(key, value string) *dialog {
 	// TODO ?: use sprintf
 	d := strings.SplitN(value, ",", 10)
-	return &Dialog{
+	return &dialog{
 		Layer:     utils.Str2int(d[0]),
 		StartTime: d[1],
 		EndTime:   d[2],

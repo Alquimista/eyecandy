@@ -16,28 +16,41 @@ import (
 )
 
 const (
+	// AlignBottomLeft Bottom Left SSA numbered Alignment
 	AlignBottomLeft int = 1 + iota
+	// AlignBottomCenter Bottom Center SSA numbered Alignment
 	AlignBottomCenter
+	// AlignBottomRight Bottom Right SSA numbered Alignment
 	AlignBottomRight
 
+	// AlignMiddleLeft Middle Left SSA numbered Alignment
 	AlignMiddleLeft
+	// AlignMiddleCenter Middle Center SSA numbered Alignment
 	AlignMiddleCenter
+	// AlignMiddleRight Middle Right SSA numbered Alignment
 	AlignMiddleRight
 
+	// AlignTopLeft Top Left SSA numbered Alignment
 	AlignTopLeft
+	// AlignTopCenter Top Left SSA numbered Alignment
 	AlignTopCenter
+	// AlignTopRight Top Right SSA numbered Alignment
 	AlignTopRight
 )
 
-var ReTags = regexp.MustCompile(`({[\s\w\d\\-]+})*`)
-var ReKara = regexp.MustCompile(
+var reStripTags = regexp.MustCompile(`({[\s\w\d\\-]+})*`)
+var reKara = regexp.MustCompile(
 	`{\\k[of]?(?P<duration>\d+)` + // k duration in centiseconds
 		`(?:\-)*(?P<inline>[\w\d]+)*` + // inline
 		`(?:\s*}\s*{[\s\w\d]+)*` + //ignore tags
 		`}(?P<text>[^\{\}]*)`) //text
 
-// Line Represent the subtitle"s lines.
-type Line struct {
+func stripSSATags(text string) string {
+	return strings.TrimSpace(reStripTags.ReplaceAllString(text, ""))
+}
+
+// line Represent the subtitle"s lines.
+type line struct {
 	Layer      int
 	StartTime  int
 	EndTime    int
@@ -52,7 +65,6 @@ type Line struct {
 	Comment    bool
 	Kara       string
 	syls       [][]string
-	chars      [][]string
 	SylN       int
 	CharN      int
 	fontFace   font.Face
@@ -70,8 +82,8 @@ type Line struct {
 	resolution [2]int
 }
 
-// Syl Represent the subtitle"s lines.
-type Syl struct {
+// syl Represent the subtitle"s lines.
+type syl struct {
 	Layer     int
 	StartTime int
 	EndTime   int
@@ -98,8 +110,8 @@ type Syl struct {
 	Right     float64
 }
 
-// Char Represent the subtitle"s lines.
-type Char struct {
+// char Represent the subtitle"s lines.
+type char struct {
 	Layer         int
 	StartTime     int
 	EndTime       int
@@ -130,7 +142,8 @@ type Char struct {
 	SylDuration   int
 }
 
-func (d *Line) Chars() (chars []*Char) {
+// Chars list all characters in a Line
+func (d *line) Chars() (chars []*char) {
 
 	start, end, x, dur := 0, 0, 0.0, 0
 	for _, s := range d.Syls() {
@@ -181,7 +194,7 @@ func (d *Line) Chars() (chars []*Char) {
 				end = lineStart
 			}
 
-			c := &Char{
+			c := &char{
 				Layer:     d.Layer,
 				Style:     d.Style,
 				StyleName: d.StyleName,
@@ -223,7 +236,8 @@ func (d *Line) Chars() (chars []*Char) {
 
 }
 
-func (d *Line) Syls() (syls []*Syl) {
+// Syls list all syllables in a Line
+func (d *line) Syls() (syls []*syl) {
 
 	lineStart := d.StartTime
 	lineEnd := d.EndTime
@@ -326,7 +340,7 @@ func (d *Line) Syls() (syls []*Syl) {
 		}
 
 		if text != "" {
-			s := &Syl{
+			s := &syl{
 				Layer:     d.Layer,
 				Style:     d.Style,
 				StyleName: d.StyleName,
@@ -360,7 +374,8 @@ func (d *Line) Syls() (syls []*Syl) {
 	return syls
 }
 
-type Effect struct {
+// script represent the SSA Script
+type script struct {
 	scriptIn           *reader.Script
 	scriptOut          *writer.Script
 	fontFace           map[string]font.Face
@@ -377,7 +392,8 @@ type Effect struct {
 	Audio              string
 }
 
-func (fx *Effect) Lines() (dialogs []*Line) {
+// List all the lines in a Script
+func (fx *script) Lines() (dialogs []*line) {
 
 	resx, resy := float64(fx.Resolution[0]), float64(fx.Resolution[1])
 
@@ -386,8 +402,7 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 		end := asstime.SSAtoMS(dlg.EndTime)
 		start := asstime.SSAtoMS(dlg.StartTime)
 		duration := end - start
-		text := strings.TrimSpace(ReTags.ReplaceAllString(dlg.Text, ""))
-
+		text := stripSSATags(dlg.Text)
 		fontFace := fx.fontFace[dlg.StyleName]
 		width, height := utils.MeasureString(fontFace, text)
 		width *= dlg.Style.Scale[0] / 100.0
@@ -449,9 +464,19 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 			y = lbot
 		}
 
-		syls := ReKara.FindAllStringSubmatch(dlg.Text, -1)
+		syls := reKara.FindAllStringSubmatch(dlg.Text, -1)
 
-		d := &Line{
+		charN := 0
+		for _, s := range syls {
+			syltext := strings.TrimSpace(s[3])
+			if syltext != "" {
+				for range syltext {
+					charN++
+				}
+			}
+		}
+
+		d := &line{
 			Layer:      dlg.Layer,
 			StartTime:  start,
 			EndTime:    end,
@@ -467,6 +492,7 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 			Kara:       dlg.Text,
 			syls:       syls,
 			SylN:       len(syls),
+			CharN:      charN,
 			fontFace:   fontFace,
 			Width:      float64(width),
 			Height:     float64(height),
@@ -486,36 +512,46 @@ func (fx *Effect) Lines() (dialogs []*Line) {
 	return dialogs
 }
 
-func (fx *Effect) GetStyle(name string) (*reader.Style, bool) {
+// GetStyle get a style corresponding to name provided
+func (fx *script) GetStyle(name string) (*reader.Style, bool) {
 	style, ok := fx.Styles()[name]
 	return style, ok
 }
 
-func (fx *Effect) Styles() map[string]*reader.Style {
+// Styles list styles use the Script
+func (fx *script) Styles() map[string]*reader.Style {
 	return fx.scriptIn.StyleUsed
 }
 
-func (fx *Effect) AddStyle(sty *writer.Style) {
+// AddStyle append a Style to Script
+func (fx *script) AddStyle(sty *writer.Style) {
 	fx.scriptIn.StyleUsed[sty.Name] = reader.NewStyle(sty.Name)
 	fx.scriptOut.AddStyle(sty)
 }
 
-func (fx *Effect) CopyLine(dialog *Line) Line {
+// CopyLine create a copy of the current Line
+func (fx *script) CopyLine(dialog *line) line {
 	return *dialog
 }
 
-func (fx *Effect) CopySyl(dialog *Syl) Syl {
+// CopySyl create a copy of the current Syl
+func (fx *script) CopySyl(dialog *syl) syl {
 	return *dialog
 }
 
-func (fx *Effect) CopyChar(dialog *Char) Char {
+// CopyChar create a copy of the current Char
+func (fx *script) CopyChar(dialog *char) char {
 	return *dialog
 }
 
-func (fx *Effect) Add(dialog interface{}) {
+// Add append a Dialog (Syl, Char, Line) to Script
+func (fx *script) Add(dialog interface{}) {
+
+	// No me gusta repetir tanto código
+	// pero funciona
 
 	switch dlg := dialog.(type) {
-	case Line:
+	case line:
 		d := NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
 		d.Start = asstime.MStoSSA(dlg.StartTime)
@@ -526,7 +562,7 @@ func (fx *Effect) Add(dialog interface{}) {
 		d.Tags = dlg.Tags
 		d.Comment = dlg.Comment
 		fx.scriptOut.AddDialog(d)
-	case Syl:
+	case syl:
 		d := NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
 		d.Start = asstime.MStoSSA(dlg.StartTime)
@@ -537,7 +573,7 @@ func (fx *Effect) Add(dialog interface{}) {
 		d.Tags = dlg.Tags
 		d.Comment = dlg.Comment
 		fx.scriptOut.AddDialog(d)
-	case Char:
+	case char:
 		d := NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
 		d.Start = asstime.MStoSSA(dlg.StartTime)
@@ -549,12 +585,13 @@ func (fx *Effect) Add(dialog interface{}) {
 		d.Comment = dlg.Comment
 		fx.scriptOut.AddDialog(d)
 	default:
-		fmt.Println("Not admited object")
+		fmt.Println("Not admitted object")
 	}
 
 }
 
-func (fx *Effect) Save(fn string) {
+// Save create the final script file (.ass)
+func (fx *script) Save(fn string) {
 	fx.scriptOut.Resolution = fx.Resolution
 	fx.scriptOut.VideoPath = fx.VideoPath
 	fx.scriptOut.VideoZoom = fx.VideoZoom
@@ -569,7 +606,8 @@ func (fx *Effect) Save(fn string) {
 	fx.scriptOut.Save(fn)
 }
 
-func NewEffect(inFN string) *Effect {
+// NewEffect create a new script
+func NewEffect(inFN string) *script {
 	input := reader.Read(inFN)
 	output := writer.NewScript()
 
@@ -620,7 +658,7 @@ func NewEffect(inFN string) *Effect {
 	dke.Comment = true
 	output.AddDialog(dke)
 
-	return &Effect{
+	return &script{
 		scriptIn:           input,
 		scriptOut:          output,
 		Resolution:         input.Resolution,
@@ -638,10 +676,12 @@ func NewEffect(inFN string) *Effect {
 	}
 }
 
+// NewStyle create a new Style
 func NewStyle(name string) *writer.Style {
 	return writer.NewStyle(name)
 }
 
+// NewDialog create a new Dialog
 func NewDialog(text string) *writer.Dialog {
 	return writer.NewDialog(text)
 }

@@ -55,16 +55,25 @@ Active Line: 1
 %s`
 
 const (
+	// AlignBottomLeft Bottom Left SSA numbered Alignment
 	AlignBottomLeft int = 1 + iota
+	// AlignBottomCenter Bottom Center SSA numbered Alignment
 	AlignBottomCenter
+	// AlignBottomRight Bottom Right SSA numbered Alignment
 	AlignBottomRight
 
+	// AlignMiddleLeft Middle Left SSA numbered Alignment
 	AlignMiddleLeft
+	// AlignMiddleCenter Middle Center SSA numbered Alignment
 	AlignMiddleCenter
+	// AlignMiddleRight Middle Right SSA numbered Alignment
 	AlignMiddleRight
 
+	// AlignTopLeft Top Left SSA numbered Alignment
 	AlignTopLeft
+	// AlignTopCenter Top Left SSA numbered Alignment
 	AlignTopCenter
+	// AlignTopRight Top Right SSA numbered Alignment
 	AlignTopRight
 )
 
@@ -90,7 +99,7 @@ type Style struct {
 	Encoding  int
 }
 
-// String get the generated Style as a String
+// String get the generated style as a String
 func (sty *Style) String() string {
 
 	return fmt.Sprintf(styleTemplate,
@@ -114,14 +123,9 @@ func (sty *Style) String() string {
 
 // NewStyle create a new Style Struct with defaults
 func NewStyle(name string) *Style {
-	// fontname := "Sans"
-	// if runtime.GOOS == "windows" {
-	// 	fontname = "Arial"
-	// }
-	fontname := "Arial"
 	return &Style{
 		Name:     name,
-		FontName: fontname,
+		FontName: "Arial",
 		FontSize: 35,
 		Color: [4]string{
 			"#FFFFFF", //Primary

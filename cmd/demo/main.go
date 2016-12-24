@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	InputScript = "test/test.ass"
-	OuputScript = "test/test.fx.ass"
+	inputScript = "test/test.ass"
+	ouputScript = "test/test.fx.ass"
 )
 
 func doFX() {
-	subs := eyecandy.NewEffect(InputScript)
+	subs := eyecandy.NewEffect(inputScript)
 
 	for _, line := range subs.Lines() {
 
@@ -64,7 +64,7 @@ func doFX() {
 
 		}
 	}
-	subs.Save(OuputScript)
+	subs.Save(ouputScript)
 }
 
 func main() {

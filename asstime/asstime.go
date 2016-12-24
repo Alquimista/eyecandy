@@ -29,15 +29,20 @@ const (
 )
 
 const (
+	// Millisecond Base time multiplier
 	Millisecond = 1
+	// Centisecond time multiplier
 	Centisecond = 10 * Millisecond
-	Second      = 1000 * Millisecond
-	Minute      = 60 * Second
-	Hour        = 60 * Minute
+	// Second time multiplier
+	Second = 1000 * Millisecond
+	// Minute time multiplier
+	Minute = 60 * Second
+	// Hour time multiplier
+	Hour = 60 * Minute
 )
 
-// TODO: Try scanf
-var ReSSAfmt = regexp.MustCompile(`(\d):(\d+):(\d+).(\d+)`)
+// reSSAfmt regex time stamp
+var reSSAfmt = regexp.MustCompile(`(\d):(\d+):(\d+).(\d+)`)
 
 // MStoFrames Convert Frames to Milliseconds
 func MStoFrames(ms int, framerate float64) int {
@@ -49,6 +54,7 @@ func FramesToMS(frames int, framerate float64) int {
 	return int((float64(frames) / float64(framerate)) * Second)
 }
 
+// MStoSSA Convert Milliseconds to SSA timestamp
 func MStoSSA(milli int) string {
 	sec, ms := utils.DivMod(milli, 1000)
 	min, s := utils.DivMod(sec, 60)
@@ -57,14 +63,16 @@ func MStoSSA(milli int) string {
 	return fmt.Sprintf("%01d:%02d:%02d.%02d", h, m, s, cs)
 }
 
+// SSAtoMS Convert SSA timestamp to Milliseconds
 func SSAtoMS(t string) int {
-	h, m, s, cs := SSAtoSplit(t)
+	h, m, s, cs := ssatoSplit(t)
 	return (h*Hour + m*Minute + s*Second + cs*Centisecond)
 }
 
-func SSAtoSplit(t string) (h, m, s, cs int) {
+// ssatoSplit split components of SSA timestamp
+func ssatoSplit(t string) (h, m, s, cs int) {
 	//H:MM:SS.CC (H=Hour, M=Minute, S=Second, C=centisecond)
-	tm := ReSSAfmt.FindStringSubmatch(t)
+	tm := reSSAfmt.FindStringSubmatch(t)
 	return utils.Str2int(tm[1]), utils.Str2int(tm[2]),
 		utils.Str2int(tm[3]), utils.Str2int(tm[4])
 }

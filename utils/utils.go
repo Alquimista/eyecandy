@@ -15,6 +15,7 @@ import (
 	"golang.org/x/image/font"
 )
 
+// DivMod do a division an a modulo operation.
 func DivMod(a, b int) (q, r int) {
 	return int(a / b), a % b
 }
@@ -28,6 +29,7 @@ func Str2int(s string) int {
 	return i
 }
 
+// Hex2int convert hexadecimal to decimal.
 func Hex2int(hexStr string) int {
 	// base 16 for hexadecimal
 	i, err := strconv.ParseInt(hexStr, 16, 64)
@@ -100,6 +102,7 @@ func MeasureString(ff font.Face, s string) (w float64, h float64) {
 		float64(ff.Metrics().Height>>6) * 96.0 / 72.0
 }
 
+// FontLoad load and parse a truetype font.
 func FontLoad(fontName string, fontSize int) (font.Face, error) {
 
 	// TODO: select the correct font path
@@ -120,33 +123,39 @@ func FontLoad(fontName string, fontSize int) (font.Face, error) {
 	return face, nil
 }
 
+// LenString length of a string.
 func LenString(text string) int {
 	return len([]rune(text))
 }
 
+// TrimSpaceCount trims spaces of text and count the number of Left and Right spaces
 func TrimSpaceCount(text string) (string, int, int) {
-	preSpace := LenString(text) -
+	leftSpace := LenString(text) -
 		LenString(strings.TrimLeft(text, " "))
-	postSpace := LenString(text) -
+	rightSpace := LenString(text) -
 		LenString(strings.TrimRight(text, " "))
-	return strings.TrimSpace(text), preSpace, postSpace
+	return strings.TrimSpace(text), leftSpace, rightSpace
 }
 
+// RandomFloat random decimal number between min and max
 func RandomFloat(min, max float64) float64 {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Float64()*(max-min) + min
 }
 
+// RandomInt random number between min and max
 func RandomInt(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min) + min
 }
 
+// RandomChoiceString select a random choice in a string slice
 func RandomChoiceString(list []string) string {
 	rand.Seed(time.Now().UnixNano())
 	return list[rand.Intn(len(list))]
 }
 
+// RandomChoiceInt select a random choice in a int slice
 func RandomChoiceInt(list []int) int {
 	rand.Seed(time.Now().UnixNano())
 	return list[rand.Intn(len(list))]
