@@ -12,9 +12,10 @@ import (
 	"github.com/Alquimista/eyecandy/utils"
 )
 
+// silence?, noise?
 const dummyVideoTemplate string = "?dummy:%.6f:%d:%d:%d:%d:%d:%d%s:"
 const dummyAudioTemplate string = "dummy-audio:silence?sr=44100&bd=16&" +
-	"ch=1&ln=396900000:"
+	"ch=1&ln=396900000:" // silence?, noise? TODO: dummy audio function
 const styleFormat string = "Format: Name, Fontname, Fontsize, " +
 	"PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, " +
 	"Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, " +
@@ -77,13 +78,25 @@ const (
 	AlignTopRight
 )
 
+// DummyVideo blank video file.
+func DummyVideo(framerate float64, w, h int, hexc string, cb bool, timeS int) string {
+	c := color.NewFromHex(hexc)
+	checkboard := ""
+	if cb {
+		checkboard = "c"
+	}
+	frames := asstime.MStoFrames(timeS*asstime.Second, framerate)
+	return fmt.Sprintf(
+		dummyVideoTemplate,
+		utils.Round(framerate, 3), frames, w, h, c.R, c.G, c.B, checkboard)
+}
+
 // Style represent subtitle"s styles.
 type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
-	Color     [4]string //Primary, Secondary, Bord, Shadow
-	Alpha     [4]uint8  //Primary, Secondary, Bord, Shadow
+	Color     [4]*color.Color //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
@@ -105,10 +118,10 @@ func (sty *Style) String() string {
 	return fmt.Sprintf(styleTemplate,
 		sty.Name,
 		sty.FontName, sty.FontSize,
-		color.HEXtoSSAL(sty.Color[0], sty.Alpha[0]),
-		color.HEXtoSSAL(sty.Color[1], sty.Alpha[1]),
-		color.HEXtoSSAL(sty.Color[2], sty.Alpha[2]),
-		color.HEXtoSSAL(sty.Color[3], sty.Alpha[3]),
+		sty.Color[0].SSAL(),
+		sty.Color[1].SSAL(),
+		sty.Color[2].SSAL(),
+		sty.Color[3].SSAL(),
 		utils.Bool2str(sty.Bold), utils.Bool2str(sty.Italic),
 		utils.Bool2str(sty.Underline), utils.Bool2str(sty.StrikeOut),
 		sty.Scale[0], sty.Scale[1],
@@ -127,11 +140,11 @@ func NewStyle(name string) *Style {
 		Name:     name,
 		FontName: "Arial",
 		FontSize: 35,
-		Color: [4]string{
-			"#FFFFFF", //Primary
-			"#0000FF", //Secondary
-			"#000000", //Bord
-			"#000000", //Shadow
+		Color: [4]*color.Color{
+			color.NewFromHex("#FFFFFF"), //Primary
+			color.NewFromHex("#0000FF"), //Secondary
+			color.NewFromHex("#000000"), //Bord
+			color.NewFromHex("#000000"), //Shadow
 		},
 		Scale:     [2]float64{100, 100},
 		Bord:      2,
@@ -250,21 +263,14 @@ func (s *Script) String() string {
 		s.VideoAR = float64(s.Resolution[0]) / float64(s.Resolution[1])
 	}
 	if s.VideoPath == "" {
-		// TODO: dummy video function
-		// Dummy video
-		framerate := asstime.FpsNtscFilm
-		w, h := s.Resolution[0], s.Resolution[1]
-		r, g, b := 0, 0, 0
-		checkboard := "" // checkbord=True "c", checkboard=False ""
-		//TODO: GET THE MAXIMUM TIME DIALOG
-		frames := int(framerate) * 60 * 5
-		s.VideoPath = fmt.Sprintf(
-			dummyVideoTemplate,
-			utils.Round(framerate, 3), frames, w, h, r, g, b, checkboard)
+		s.VideoPath = DummyVideo(
+			asstime.FpsNtscFilm,
+			s.Resolution[0], s.Resolution[1],
+			"#000",
+			false,
+			600)
 	}
 	if s.VideoPath != "" {
-		// TODO: dummy audio function
-		// silence?, noise?
 		if strings.HasPrefix(s.VideoPath, "?dummy") {
 			s.Audio = dummyAudioTemplate
 		} else {

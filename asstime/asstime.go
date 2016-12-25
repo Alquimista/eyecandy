@@ -32,9 +32,9 @@ const (
 	// Millisecond Base time multiplier
 	Millisecond = 1
 	// Centisecond time multiplier
-	Centisecond = 10 * Millisecond
+	Centisecond = 10
 	// Second time multiplier
-	Second = 1000 * Millisecond
+	Second = 1000
 	// Minute time multiplier
 	Minute = 60 * Second
 	// Hour time multiplier
@@ -46,7 +46,7 @@ var reSSAfmt = regexp.MustCompile(`(\d):(\d+):(\d+).(\d+)`)
 
 // MStoFrames Convert Frames to Milliseconds
 func MStoFrames(ms int, framerate float64) int {
-	return int(math.Ceil(framerate * (float64(ms) / float64(1000))))
+	return int(math.Ceil(framerate * float64(ms/Second)))
 }
 
 // FramesToMS Convert Frames to Milliseconds

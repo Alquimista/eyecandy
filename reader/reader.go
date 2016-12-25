@@ -56,8 +56,7 @@ type Style struct {
 	Name      string
 	FontName  string
 	FontSize  int
-	Color     [4]string //Primary, Secondary, Bord, Shadow
-	Alpha     [4]uint8  //Primary, Secondary, Bord, Shadow
+	Color     [4]*color.Color //Primary, Secondary, Bord, Shadow
 	Bold      bool
 	Italic    bool
 	Underline bool
@@ -80,11 +79,11 @@ func NewStyle(name string) *Style {
 		Name:     name,
 		FontName: fontname,
 		FontSize: 35,
-		Color: [4]string{
-			"#FFFFFF", //Primary
-			"#0000FF", //Secondary
-			"#000000", //Bord
-			"#000000", //Shadow
+		Color: [4]*color.Color{
+			color.NewFromHex("#FFFFFF"), //Primary
+			color.NewFromHex("#0000FF"), //Secondary
+			color.NewFromHex("#000000"), //Bord
+			color.NewFromHex("#000000"), //Shadow
 		},
 		Scale:     [2]float64{100, 100},
 		Bord:      2,
@@ -131,26 +130,15 @@ func parseDialog(key, value string) *dialog {
 func parseStyle(value string) *Style {
 	// TODO ?: use sprintf
 	sty := strings.SplitN(value, ",", 23)
-
-	c1, a1 := color.SSALtoHEXAlpha(sty[3])
-	c2, a2 := color.SSALtoHEXAlpha(sty[4])
-	c3, a3 := color.SSALtoHEXAlpha(sty[5])
-	c4, a4 := color.SSALtoHEXAlpha(sty[6])
-
 	return &Style{
 		Name:     sty[0],
 		FontName: sty[1],
 		FontSize: utils.Str2int(sty[2]),
-		Color: [4]string{
-			c1,  // Primary
-			c2,  // Secondary
-			c3,  // Bord
-			c4}, // Shadow
-		Alpha: [4]uint8{
-			uint8(a1),  // Primary
-			uint8(a2),  // Secondary
-			uint8(a3),  // Bord
-			uint8(a4)}, // Shadow
+		Color: [4]*color.Color{
+			color.NewFromSSA(sty[3]),  // Primary
+			color.NewFromSSA(sty[4]),  // Secondary
+			color.NewFromSSA(sty[5]),  // Bord
+			color.NewFromSSA(sty[6])}, // Shadow
 		Bold:      utils.Str2bool(sty[7]),
 		Italic:    utils.Str2bool(sty[8]),
 		Underline: utils.Str2bool(sty[9]),
@@ -173,6 +161,17 @@ func parseStyle(value string) *Style {
 	}
 }
 
+func parseAR(value string) float64 {
+	ar := strings.Replace(value, "c", "", -1)
+	numden := strings.SplitN(ar, ":", 2)
+	if len(numden) == 2 {
+		num, den := utils.Str2float(numden[0]),
+			utils.Str2float(numden[1])
+		return num / den
+	}
+	return utils.Str2float(ar)
+}
+
 // Read parse and read an SSA/ASS Subtitle Script.
 func Read(fn string) *Script {
 
@@ -186,7 +185,7 @@ func Read(fn string) *Script {
 	s.Style = make(map[string]*Style)
 	s.StyleUsed = make(map[string]*Style)
 	var playresx, playresy int
-	var videozoom, videoar float64
+	var videozoom float64
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -226,22 +225,13 @@ func Read(fn string) *Script {
 		case "video_zoom":
 			// Use "video_zoom_percent" key if present
 			// else use "video_zoom" key
-			if videozoom == 0 {
+			if videozoom == 0.0 {
 				zoom := strings.Replace(value, "%", "", -1)
 				videozoom = utils.Str2float(zoom) / 100.0
 			}
 		case "video_aspect_ratio", "video_ar_value",
 			"aegisub_video_aspect_ratio":
-			ar := strings.Replace(value, "c", "", -1)
-			numden := strings.SplitN(ar, ":", 2)
-			if len(numden) == 2 {
-				num, den := utils.Str2float(numden[0]),
-					utils.Str2float(numden[1])
-				videoar = num / den
-			} else {
-				videoar = utils.Str2float(ar)
-			}
-			s.VideoAR = videoar
+			s.VideoAR = parseAR(value)
 		case "video_position":
 			s.VideoPosition = utils.Str2int(value)
 		case "title":
@@ -263,12 +253,12 @@ func Read(fn string) *Script {
 
 	// Get only the styles used in dialogs
 	for _, d := range s.Dialog {
-		sty, ok := s.Style[d.StyleName]
-		if !ok {
-			sty = s.Style["Default"]
-		}
-		d.Style = sty
 		if !d.Comment {
+			sty, ok := s.Style[d.StyleName]
+			if !ok {
+				sty = s.Style["Default"]
+			}
+			d.Style = sty
 			s.StyleUsed[d.StyleName] = sty
 		}
 	}

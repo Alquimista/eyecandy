@@ -619,7 +619,6 @@ func NewEffect(inFN string) *Script {
 		s.FontName = style.FontName
 		s.FontSize = style.FontSize
 		s.Color = style.Color
-		s.Alpha = style.Alpha
 		s.Bold = style.Bold
 		s.Italic = style.Italic
 		s.Scale = style.Scale

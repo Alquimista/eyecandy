@@ -2,7 +2,7 @@
 ASS(Advanced SubStation Alpha) karaoke effect generator (http://www.aegisub.org/)
 
 # Generated Docs [![GoDoc](https://godoc.org/github.com/Alquimista/eyecandy?status.svg)](https://godoc.org/github.com/Alquimista/eyecandy)
-https://gowalker.org/github.com/Alquimista/eyecandy
+https://gowalker.org/github.com/Alquimista/eyecandy 
 https://godoc.org/github.com/Alquimista/eyecandy
 
 # Rewrite of Eyecandy (Python)
