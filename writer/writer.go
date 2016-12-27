@@ -80,7 +80,7 @@ const (
 
 // DummyVideo blank video file.
 func DummyVideo(framerate float64, w, h int, hexc string, cb bool, timeS int) string {
-	c := color.NewFromHex(hexc)
+	c := color.NewFromHTML(hexc)
 	checkboard := ""
 	if cb {
 		checkboard = "c"
@@ -141,10 +141,10 @@ func NewStyle(name string) *Style {
 		FontName: "Arial",
 		FontSize: 35,
 		Color: [4]*color.Color{
-			color.NewFromHex("#FFFFFF"), //Primary
-			color.NewFromHex("#0000FF"), //Secondary
-			color.NewFromHex("#000000"), //Bord
-			color.NewFromHex("#000000"), //Shadow
+			color.NewFromHEX(0xFFFFFF), //Primary
+			color.NewFromHEX(0x0000FF), //Secondary
+			color.NewFromHEX(0x000000), //Bord
+			color.NewFromHEX(0x000000), //Shadow
 		},
 		Scale:     [2]float64{100, 100},
 		Bord:      2,

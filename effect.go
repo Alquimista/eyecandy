@@ -390,6 +390,7 @@ type Script struct {
 	MetaTranslation    string
 	MetaTiming         string
 	Audio              string
+	LineN              int
 }
 
 // Lines List all the lines in a Script
@@ -642,6 +643,7 @@ func NewEffect(inFN string) *Script {
 	dok := NewDialog("### Original Karaoke ###")
 	dok.Comment = true
 	output.AddDialog(dok)
+	LineN := 0
 	for _, dlg := range input.Dialog {
 		d := writer.NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
@@ -652,6 +654,7 @@ func NewEffect(inFN string) *Script {
 		d.Effect = dlg.Effect
 		d.Comment = true
 		output.AddDialog(d)
+		LineN++
 	}
 	dke := NewDialog("### Karaoke Effect ###")
 	dke.Comment = true
@@ -672,6 +675,7 @@ func NewEffect(inFN string) *Script {
 		MetaTiming:         input.MetaTiming,
 		Audio:              input.Audio,
 		fontFace:           fontFace,
+		LineN:              LineN,
 	}
 }
 

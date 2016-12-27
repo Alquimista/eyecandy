@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Alquimista/eyecandy"
+	"github.com/Alquimista/eyecandy/color"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
@@ -17,6 +18,27 @@ func doFX() {
 
 	subs := eyecandy.NewEffect(inputScript)
 
+	// for _, c := range color.DistinguishableColor(5, 0.5, 1) {
+	// 	fmt.Println(c.HTML())
+	// }
+	// fmt.Println()
+
+	// #FF8080
+	// #80FFFF
+	// #FFFF80
+	// #FF80FF
+	// #80FF80
+
+	// for _, c := range color.Rainbow(5, 0.5, 1) {
+	// 	fmt.Println(c.HTML())
+	// }
+
+	// #FF8080
+	// #FFFF80
+	// #80FF80
+	// #80FFFF
+	// #8080FF
+
 	for _, line := range subs.Lines() {
 
 		C2 := line.Style.Color[1]
@@ -25,7 +47,9 @@ func doFX() {
 		FADEIN := 150
 		FADEOUT := 150
 
-		for _, char := range line.Chars() {
+		COLORS := color.DistinguishableColor(line.CharN, 0.5, 1)
+
+		for ci, char := range line.Chars() {
 
 			x, y := char.Left, char.Bottom
 
@@ -42,8 +66,8 @@ func doFX() {
 			s.EndTime = s.SylEndTime
 			s.Layer = 1
 			s.Tags = fmt.Sprintf(
-				`\an1\pos(%g,%g)\blur%d\fscx%d\fscy%d\t(fscx%d\fscy%d\blur%d\1c%s)`,
-				x, y, BLUR, 130, 130, 100, 100, 1, C2.SSA())
+				`\an1\pos(%g,%g)\blur%d\fscx%d\fscy%d\1c%s\t(fscx%d\fscy%d\blur%d\1c%s)`,
+				x, y, BLUR, 130, 130, COLORS[ci], 100, 100, 1, C2.SSA())
 			subs.Add(s)
 
 			// Silabas Muertas (cantadas)
@@ -59,7 +83,7 @@ func doFX() {
 			px := x + utils.RandomFloat(-5, 5)
 			py := y + utils.RandomFloat(-5, 5)
 			m := fmt.Sprintf("move(%g, %g, %g, %g)", px, py-char.Height/4, x, y)
-			s.Tags = fmt.Sprintf(`\an1\blur%s\fade(%d,0)\%s\1c%s`,
+			s.Tags = fmt.Sprintf(`\an1\blur%d\fade(%d,0)\%s\1c%s`,
 				BLUR, FADEIN, m, C2.SSA())
 			s.StartTime = line.StartTime - FADEIN - 50
 			s.EndTime = line.StartTime
