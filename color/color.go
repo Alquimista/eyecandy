@@ -10,6 +10,8 @@ import (
 	"github.com/Alquimista/eyecandy/utils"
 )
 
+// easyrgb.com
+
 var reColorHEX = regexp.MustCompile(
 	`(?:#)*([0-9A-Fa-f]{2})` + // red component
 		`([0-9A-Fa-f]{2})` + // green
@@ -43,26 +45,17 @@ type Color struct {
 	R, G, B, A uint8
 }
 
-func (c *Color) Min() (min uint8) {
-	min = c.R
-	if c.G < min {
-		min = c.G
+func clamp(n, min, max float64) float64 {
+	if n > max {
+		return max
+	} else if n < min {
+		return min
 	}
-	if c.B < min {
-		min = c.B
-	}
-	return min
+	return n
 }
 
-func (c *Color) Max() (max uint8) {
-	max = c.R
-	if c.G > max {
-		max = c.G
-	}
-	if c.B > max {
-		max = c.B
-	}
-	return max
+func ClampRGB1(r, g, b float64) (float64, float64, float64) {
+	return clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0)
 }
 
 func (c *Color) MinRGB1() (min float64) {
@@ -87,6 +80,10 @@ func (c *Color) MaxRGB1() (max float64) {
 		max = b
 	}
 	return max
+}
+
+func (c *Color) MinMaxRGB1() (min, max float64) {
+	return c.MinRGB1(), c.MaxRGB1()
 }
 
 func (c Color) RGB() (uint8, uint8, uint8) {
@@ -121,16 +118,78 @@ func (c Color) HEX() uint32 {
 	return uint32(c.R)<<16 + uint32(c.G)<<8 + uint32(c.B)
 }
 
-func (c Color) HSL() (h int, s, l float64) {
+func (c Color) XYZ() (x, y, z float64) {
+
+	r, g, b := c.RGB1()
+	rangeRGB := []float64{r, g, b}
+
+	rgb := []float64{}
+	for _, v := range rangeRGB {
+		value := v / 12.92
+		if v > 0.04045 {
+			value = math.Pow(v+0.055, 2.4)
+		}
+		rgb = append(rgb, value)
+	}
+
+	r, g, b = rgb[0]*100, rgb[1]*100, rgb[2]*100
+
+	// Observer. = 2°, Illuminant = D65
+	x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805)
+	y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
+	z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505)
+	return
+}
+
+func (c Color) LAB() (l, a, b float64) {
+
+	x, y, z := c.XYZ()
+	//Observer= 2°, Illuminant= D65
+	XYZ := []float64{x / 95.047, y / 100.000, z / 108.883}
+
+	components := []float64{}
+	for _, v := range XYZ {
+		value := (7.787 * v) + (16.0 / 116.0)
+		if v > 0.008856 {
+			value = math.Pow(v, 1.0/3.0)
+		}
+		components = append(components, value)
+	}
+
+	x, y, z = components[0], components[1], components[2]
+	l = (116 * y) - 16
+	a = 500 * (x - y)
+	b = 200 * (y - z)
+
+	return
+}
+
+func (c1 Color) HCL() (h int, c, l float64) {
+
+	l, a, b := c1.LAB()
+
+	H := math.Atan2(float64(b), float64(a)) //Quadrant by signs
+
+	if H > 0 {
+		h = int(((H / math.Pi) * 180) + 0.5)
+	} else {
+		h = int((360 - (math.Abs(H)/math.Pi)*180) + 0.5)
+	}
+
+	c = math.Sqrt(a*a + b*b)
+
+	return
+}
+
+func (c Color) HSL() (h, s, l int) {
 	r, g, b := c.RGB1()
 
-	rgbMax := c.MaxRGB1()
-	rgbMin := c.MinRGB1()
+	rgbMin, rgbMax := c.MinMaxRGB1()
 	delta := rgbMax - rgbMin
 
-	l = (rgbMax + rgbMin) / 2
+	L := (rgbMax + rgbMin) / 2.0
 	if delta != 0 {
-		s = delta / (1 - math.Abs(2*l-1))
+		s = int((delta/(1-math.Abs(2*L-1)))*100 + 0.5)
 	}
 	if rgbMax == r {
 		h = int(60*(g-b)/delta+360) % 360
@@ -139,17 +198,23 @@ func (c Color) HSL() (h int, s, l float64) {
 	} else {
 		h = int(60*(r-g)/delta + 240)
 	}
+	l = int(L*100 + 0.5)
 	return
 }
 
-func (c Color) HSB() (h int, s, b float64) {
+func (c Color) HSB() (h, s, b int) {
 	h, s, l := c.HSL()
-	b = (2*l + s*(1-math.Abs(2*l-1))) / 2
-	s = (s * (1 - math.Abs(2*l-1))) / b
+	S := float64(s) / 100.0
+	L := float64(l) / 100.0
+	B := (2*L + S*(1-math.Abs(2*L-1))) / 2.0
+	S = (S * (1 - math.Abs(2*L-1))) / B
+
+	s = int(S*100 + 0.5)
+	b = int(B*100 + 0.5)
 	return
 }
 
-func (c Color) HSV() (h int, s, b float64) {
+func (c Color) HSV() (h, s, b int) {
 	return c.HSB()
 }
 
@@ -165,6 +230,7 @@ func NewFromRGBA(r, g, b, a uint8) *Color {
 
 // NewRGB1
 func NewFromRGB1(r, g, b float64) *Color {
+	r, g, b = ClampRGB1(r, g, b)
 	return &Color{
 		R: uint8(r*255 + 0.5),
 		G: uint8(g*255 + 0.5),
@@ -172,36 +238,43 @@ func NewFromRGB1(r, g, b float64) *Color {
 }
 
 // NewHSL
-func NewFromHSL(h int, s, l float64) *Color {
+func NewFromHSL(h, s, l int) *Color {
 
-	C := (1 - math.Abs(2*l-1)) * s
-	X := C * (1 - math.Abs(float64((h/60)%2-1)))
-	m := l - C/2.0
+	S := float64(s) / 100
+	L := float64(l) / 100
 
-	if 0 <= h && h < 60 {
+	C := (1 - math.Abs(2*L-1)) * S
+	X := C * (1 - math.Abs(float64((h/60.0)%2-1)))
+	m := L - C/2.0
+
+	switch {
+	case 0 <= h && h < 60:
 		return NewFromRGB1(C+m, X+m, m)
-	} else if 60 <= h && h < 120 {
+	case 60 <= h && h < 120:
 		return NewFromRGB1(X+m, C+m, m)
-	} else if 120 <= h && h < 180 {
+	case 120 <= h && h < 180:
 		return NewFromRGB1(m, C+m, X+m)
-	} else if 180 <= h && h < 240 {
+	case 180 <= h && h < 240:
 		return NewFromRGB1(m, X+m, C+m)
-	} else if 240 <= h && h < 300 {
+	case 240 <= h && h < 300:
 		return NewFromRGB1(X+m, m, C+m)
-	} else if 300 <= h && h < 360 {
+	case 300 <= h && h < 360:
 		return NewFromRGB1(C+m, m, X+m)
 	}
+
 	return NewFromRGB(0, 0, 0)
 }
 
 // NewHSB
-func NewFromHSB(h int, s, b float64) *Color {
-	l := b * (2 - s) / 2
-	s = b * s / (1 - math.Abs(2*l-1))
-	return NewFromHSL(h, s, l)
+func NewFromHSB(h, s, b int) *Color {
+	S := float64(s) / 100.0
+	B := float64(b) / 100.0
+	L := B * (2 - S) / 2
+	S = B * S / (1 - math.Abs(2*L-1))
+	return NewFromHSL(h, int(S*100+0.5), int(L*100+0.5))
 }
 
-func NewFromHSV(h int, s, b float64) *Color {
+func NewFromHSV(h, s, b int) *Color {
 	return NewFromHSB(h, s, b)
 }
 
@@ -252,4 +325,66 @@ func NewFromSSA(ssac string) *Color {
 		B: uint8(utils.Hex2int(clr[2])),
 		A: uint8(utils.Hex2int(clr[1])),
 	}
+}
+
+func NewFromXYZ(x, y, z float64) *Color {
+
+	// Observer = 2°, Illuminant = D65
+	x /= 100 //X from 0 to  95.047
+	y /= 100 //Y from 0 to 100.000
+	z /= 100 //Z from 0 to 108.883
+
+	// fmt.Println(x, y, z)
+
+	r := x*3.2406 + y*-1.5372 + z*-0.4986
+	g := x*-0.9689 + y*1.8758 + z*0.0415
+	b := x*0.0557 + y*-0.2040 + z*1.0570
+
+	// fmt.Println(r)
+
+	RGB := []float64{r, g, b}
+	components := []float64{}
+	for _, v := range RGB {
+		value := 12.92 * v
+		if v > 0.0031308 {
+			value = (1.055 * math.Pow(v, (1.0/2.4))) - 0.055
+		}
+		components = append(components, value)
+	}
+
+	// fmt.Println(components[0])
+
+	return NewFromRGB1(
+		components[0],
+		components[1],
+		components[2])
+}
+
+func NewFromLAB(l, a, b float64) *Color {
+
+	y := (l + 16) / 116.0
+	x := a/500.0 + y
+	z := y - b/200.0
+
+	XYZ := []float64{x, y, z}
+	components := []float64{}
+	for _, v := range XYZ {
+		value := (v - 16.0/116.0) / 7.787
+		v = math.Pow(v, 3)
+		if v > 0.008856 {
+			value = v
+		}
+		components = append(components, value)
+	}
+
+	return NewFromXYZ(
+		95.047*components[0],
+		100.000*components[1],
+		108.883*components[2])
+}
+
+func NewFromHCL(h int, c, l float64) *Color {
+	a := math.Cos(utils.Deg(float64(h))) * c
+	b := math.Sin(utils.Deg(float64(h))) * c
+	return NewFromLAB(l, a, b)
 }

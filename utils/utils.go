@@ -15,6 +15,19 @@ import (
 	"golang.org/x/image/font"
 )
 
+const (
+	RadToDeg = 180 / math.Pi
+	DegToRad = math.Pi / 180
+)
+
+func Rad(d float64) float64 {
+	return d * DegToRad
+}
+
+func Deg(r float64) float64 {
+	return r * RadToDeg
+}
+
 // DivMod do a division an a modulo operation.
 func DivMod(a, b int) (q, r int) {
 	return int(a / b), a % b
@@ -146,7 +159,7 @@ func RandomFloat(min, max float64) float64 {
 // RandomInt random number between min and max
 func RandomInt(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max-min) + min
+	return rand.Intn(max+1-min) + min
 }
 
 // RandomChoiceString select a random choice in a string slice

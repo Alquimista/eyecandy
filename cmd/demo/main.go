@@ -18,26 +18,7 @@ func doFX() {
 
 	subs := eyecandy.NewEffect(inputScript)
 
-	// for _, c := range color.DistinguishableColor(5, 0.5, 1) {
-	// 	fmt.Println(c.HTML())
-	// }
-	// fmt.Println()
-
-	// #FF8080
-	// #80FFFF
-	// #FFFF80
-	// #FF80FF
-	// #80FF80
-
-	// for _, c := range color.Rainbow(5, 0.5, 1) {
-	// 	fmt.Println(c.HTML())
-	// }
-
-	// #FF8080
-	// #FFFF80
-	// #80FF80
-	// #80FFFF
-	// #8080FF
+	// fmt.Println(interpolate.IRange(5, 0.0, 100.0, interpolate.Linear))
 
 	for _, line := range subs.Lines() {
 
@@ -47,9 +28,9 @@ func doFX() {
 		FADEIN := 150
 		FADEOUT := 150
 
-		COLORS := color.DistinguishableColor(line.CharN, 0.5, 1)
+		// COLORS := color.DistinguishableColor(line.CharN, 0.5, 1)
 
-		for ci, char := range line.Chars() {
+		for _, char := range line.Chars() {
 
 			x, y := char.Left, char.Bottom
 
@@ -58,7 +39,7 @@ func doFX() {
 			s.StartTime = line.StartTime
 			s.EndTime = char.StartTime
 			s.Tags = fmt.Sprintf(`\an1\pos(%g,%g)\blur%d\1c%s`,
-				x, y, BLUR, C2.SSA())
+				x, y, BLUR, C2)
 			subs.Add(s)
 
 			// Efecto de silaba
@@ -67,7 +48,10 @@ func doFX() {
 			s.Layer = 1
 			s.Tags = fmt.Sprintf(
 				`\an1\pos(%g,%g)\blur%d\fscx%d\fscy%d\1c%s\t(fscx%d\fscy%d\blur%d\1c%s)`,
-				x, y, BLUR, 130, 130, COLORS[ci], 100, 100, 1, C2.SSA())
+				x, y, BLUR, 130, 130,
+				// COLORS[ci],
+				color.RandomColorHSV(80, 90, color.RGoldenHue),
+				100, 100, 1, C2)
 			subs.Add(s)
 
 			// Silabas Muertas (cantadas)
@@ -75,7 +59,7 @@ func doFX() {
 			s.StartTime = char.SylEndTime
 			s.EndTime = line.EndTime
 			s.Tags = fmt.Sprintf(`\an1\pos(%g,%g)\blur%d\1c%s`,
-				x, y, BLUR, C2.SSA())
+				x, y, BLUR, C2)
 			subs.Add(s)
 
 			// Efecto de entrada
@@ -84,16 +68,16 @@ func doFX() {
 			py := y + utils.RandomFloat(-5, 5)
 			m := fmt.Sprintf("move(%g, %g, %g, %g)", px, py-char.Height/4, x, y)
 			s.Tags = fmt.Sprintf(`\an1\blur%d\fade(%d,0)\%s\1c%s`,
-				BLUR, FADEIN, m, C2.SSA())
+				BLUR, FADEIN, m, C2)
 			s.StartTime = line.StartTime - FADEIN - 50
 			s.EndTime = line.StartTime
 			subs.Add(s)
 
 			// Efecto de salida
 			s = subs.CopyChar(char) // *char
-			m = fmt.Sprintf("move(%g, %g, %g, %g)", x, y, px, py+char.Height/2)
+			m = fmt.Sprintf("move(gabpao02%g, %g, %g, %g)", x, y, px, py+char.Height/2)
 			s.Tags = fmt.Sprintf(`\an1\blur%d\fade(0,%d)\%s\1c%s`,
-				BLUR, FADEOUT, m, C2.SSA())
+				BLUR, FADEOUT, m, C2)
 			s.StartTime = line.EndTime
 			s.EndTime = line.EndTime + FADEOUT - 50
 			subs.Add(s)

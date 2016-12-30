@@ -3,7 +3,11 @@ package color
 
 import (
 	"math"
+	"math/rand"
 	"reflect"
+	"time"
+
+	"github.com/Alquimista/eyecandy/utils"
 )
 
 // Grayscale desaturate the color
@@ -44,16 +48,16 @@ func (c Color) Analog(n int, separation int) (colors []*Color) {
 }
 
 // Lighter return a lighter version of this color
-func (c Color) Lighter(amt float64) *Color {
+func (c Color) Lighter(amt int) *Color {
 	h, s, l := c.HSL()
-	l = math.Min(l+amt, 1.0)
+	l = int(math.Min(float64(l)+float64(amt), 100))
 	return NewFromHSL(h, s, l)
 }
 
 // Darker return a darker version of this color
-func (c Color) Darker(amt float64) *Color {
+func (c Color) Darker(amt int) *Color {
 	h, s, l := c.HSL()
-	l = math.Max(l-amt, 0.0)
+	l = int(math.Max(float64(l)-float64(amt), 0))
 	return NewFromHSL(h, s, l)
 }
 
@@ -81,7 +85,7 @@ func Equal(c, c2 *Color) bool {
 	return reflect.DeepEqual(c, c2)
 }
 
-func Rainbow(n int, s, v float64) (colors []*Color) {
+func Rainbow(n, s, v int) (colors []*Color) {
 	for i := 0; i < n; i++ {
 		h := float64(i) * 360 / float64(n)
 		colors = append(colors, NewFromHSV(int(h+0.5), s, v))
@@ -91,11 +95,30 @@ func Rainbow(n int, s, v float64) (colors []*Color) {
 
 // Algorithm from here:
 // http://gamedev.stackexchange.com/questions/46463/is-there-an-optimum-set-of-colors-for-10-players
+// Golden Ratio
 
-func DistinguishableColor(n int, s, v float64) (colors []*Color) {
+func DistinguishableColor(n, s, v int) (colors []*Color) {
 	for i := 0; i < n; i++ {
 		h := math.Mod(360*0.618033988749895*float64(i), 360.0)
 		colors = append(colors, NewFromHSV(int(h+0.5), s, v))
 	}
 	return
+}
+
+type rnd func() int
+
+// RandomColorHSV
+func RandomColorHSV(s, v int, f rnd) *Color {
+	if f == nil {
+		f = RGoldenHue
+	}
+	return NewFromHSV(f(), s, v)
+}
+
+func RGoldenHue() int {
+	rand.Seed(time.Now().UnixNano())
+	return int(math.Mod(360*0.618033988749895*rand.Float64(), 360.0) + 0.5)
+}
+func RHue() int {
+	return utils.RandomInt(0, 360)
 }
