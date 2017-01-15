@@ -3,7 +3,7 @@ package interpolate
 
 import "math"
 
-type interp func(float64, float64, float64) float64
+type Interp func(float64, float64, float64) float64
 
 // Interpolate funcs
 // https://play.golang.org/p/OKSM_h0zn-
@@ -218,7 +218,7 @@ func Boing(t, start, end float64) float64 {
 }
 
 // IRange
-func IRange(n int, start, end float64, f interp) (rng []float64) {
+func IRange(n int, start, end float64, f Interp) (rng []float64) {
 	for i := 0; i < n; i++ {
 		t := float64(i) / float64(n-1)
 		rng = append(rng, f(t, start, end))
@@ -226,6 +226,6 @@ func IRange(n int, start, end float64, f interp) (rng []float64) {
 	return rng
 }
 
-func ICircleRange(n int, f interp) []float64 {
+func ICircleRange(n int, f Interp) []float64 {
 	return IRange(n, 0.0, 360.0, f)
 }

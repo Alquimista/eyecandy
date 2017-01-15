@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Alquimista/eyecandy/interpolate"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
@@ -56,6 +57,38 @@ func clamp(n, min, max float64) float64 {
 
 func ClampRGB1(r, g, b float64) (float64, float64, float64) {
 	return clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0)
+}
+
+func zip(lists ...[]float64) func() []float64 {
+	zip := make([]float64, len(lists))
+	i := 0
+	return func() []float64 {
+		for j := range lists {
+			if i >= len(lists[j]) {
+				return nil
+			}
+			zip[j] = lists[j][i]
+		}
+		i++
+		return zip
+	}
+}
+
+func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) (colors []*Color) {
+
+	// rvalues := []float64
+	r1, g1, b1 := c.RGB()
+	r2, g2, b2 := c2.RGB()
+
+	red := interpolate.IRange(n, float64(r1), float64(r2), f)
+	green := interpolate.IRange(n, float64(g1), float64(g2), f)
+	blue := interpolate.IRange(n, float64(b1), float64(b2), f)
+
+	for i := 0; i < n; i++ {
+		colors = append(
+			colors, NewFromRGB(uint8(red[i]), uint8(green[i]), uint8(blue[i])))
+	}
+	return
 }
 
 func (c *Color) MinRGB1() (min float64) {

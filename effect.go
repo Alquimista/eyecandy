@@ -49,54 +49,19 @@ func stripSSATags(text string) string {
 	return strings.TrimSpace(reStripTags.ReplaceAllString(text, ""))
 }
 
-// Line Represent the subtitle"s lines.
-type Line struct {
-	Layer      int
-	StartTime  int
-	EndTime    int
-	Duration   int
-	MidTime    int
-	Style      *reader.Style
-	StyleName  string
-	Actor      string
-	Effect     string
-	Text       string
-	Tags       string
-	Comment    bool
-	Kara       string
-	syls       [][]string
-	SylN       int
-	CharN      int
-	fontFace   font.Face
-	Width      float64
-	Height     float64
-	Size       [2]float64
-	X          float64
-	Y          float64
-	Top        float64
-	Middle     float64
-	Bottom     float64
-	Left       float64
-	Center     float64
-	Right      float64
-	resolution [2]int
-}
-
-// Syl Represent the subtitle"s lines.
-type Syl struct {
+type Dialog struct {
 	Layer     int
 	StartTime int
 	EndTime   int
-	Duration  int
-	MidTime   int
-	Style     *reader.Style
 	StyleName string
 	Actor     string
 	Effect    string
 	Text      string
 	Tags      string
+	Duration  int
+	MidTime   int
+	Style     *reader.Style
 	Comment   bool
-	Inline    string
 	Width     float64
 	Height    float64
 	Size      [2]float64
@@ -110,32 +75,27 @@ type Syl struct {
 	Right     float64
 }
 
+// Line Represent the subtitle"s lines.
+type Line struct {
+	Dialog
+	Kara       string
+	SylN       int
+	CharN      int
+	syls       [][]string
+	fontFace   font.Face
+	resolution [2]int
+}
+
+// Syl Represent the subtitle"s lines.
+type Syl struct {
+	Dialog
+	Inline string
+}
+
 // Char Represent the subtitle"s lines.
 type Char struct {
-	Layer         int
-	StartTime     int
-	EndTime       int
-	Duration      int
-	MidTime       int
-	Style         *reader.Style
-	StyleName     string
-	Actor         string
-	Effect        string
-	Text          string
-	Tags          string
-	Comment       bool
+	Dialog
 	Inline        string
-	Width         float64
-	Height        float64
-	Size          [2]float64
-	X             float64
-	Y             float64
-	Top           float64
-	Middle        float64
-	Bottom        float64
-	Left          float64
-	Center        float64
-	Right         float64
 	SylStartTime  int
 	SylEndTime    int
 	SylMidEndTime int
@@ -195,32 +155,32 @@ func (d *Line) Chars() (chars []*Char) {
 			}
 
 			c := &Char{
-				Layer:     d.Layer,
-				Style:     d.Style,
-				StyleName: d.StyleName,
-				Actor:     d.Actor,
-				Effect:    d.Effect,
-				Tags:      d.Tags,
-				Comment:   d.Comment,
-				// Char
-				StartTime: start,
-				EndTime:   end,
-				Duration:  dur,
-				MidTime:   end - start,
-				Text:      text,
-				Inline:    s.Inline,
-				Width:     float64(width),
-				Height:    d.Height,
-				Size:      [2]float64{float64(width), d.Height},
-				X:         float64(x),
-				Y:         float64(d.Y),
-				Top:       float64(d.Top),
-				Middle:    float64(d.Middle),
-				Bottom:    float64(d.Bottom),
-				Left:      float64(cleft),
-				Center:    float64(ccenter),
-				Right:     float64(cright),
-				// Syl
+				Dialog: Dialog{
+					Layer:     d.Layer,
+					Style:     d.Style,
+					StyleName: d.StyleName,
+					Actor:     d.Actor,
+					Effect:    d.Effect,
+					Tags:      d.Tags,
+					Comment:   d.Comment,
+					StartTime: start,
+					EndTime:   end,
+					Duration:  dur,
+					MidTime:   end - start,
+					Text:      text,
+					Width:     float64(width),
+					Height:    d.Height,
+					Size:      [2]float64{float64(width), d.Height},
+					X:         float64(x),
+					Y:         float64(d.Y),
+					Top:       float64(d.Top),
+					Middle:    float64(d.Middle),
+					Bottom:    float64(d.Bottom),
+					Left:      float64(cleft),
+					Center:    float64(ccenter),
+					Right:     float64(cright),
+				},
+				Inline:        s.Inline,
 				SylStartTime:  s.StartTime,
 				SylEndTime:    s.EndTime,
 				SylMidEndTime: s.MidTime,
@@ -341,31 +301,32 @@ func (d *Line) Syls() (syls []*Syl) {
 
 		if text != "" {
 			s := &Syl{
-				Layer:     d.Layer,
-				Style:     d.Style,
-				StyleName: d.StyleName,
-				Actor:     d.Actor,
-				Effect:    d.Effect,
-				Tags:      d.Tags,
-				Comment:   d.Comment,
-				// Syl
-				StartTime: start,
-				EndTime:   end,
-				Duration:  dur,
-				MidTime:   end - start,
-				Text:      strippedText,
-				Inline:    inline,
-				Width:     float64(width),
-				Height:    float64(height),
-				Size:      [2]float64{float64(width), float64(height)},
-				X:         float64(x),
-				Y:         float64(y),
-				Top:       float64(stop),
-				Middle:    float64(smid),
-				Bottom:    float64(sbot),
-				Left:      float64(sleft),
-				Center:    float64(scenter),
-				Right:     float64(sright),
+				Dialog: Dialog{
+					Layer:     d.Layer,
+					Style:     d.Style,
+					StyleName: d.StyleName,
+					Actor:     d.Actor,
+					Effect:    d.Effect,
+					Tags:      d.Tags,
+					Comment:   d.Comment,
+					StartTime: start,
+					EndTime:   end,
+					Duration:  dur,
+					MidTime:   end - start,
+					Text:      strippedText,
+					Width:     float64(width),
+					Height:    float64(height),
+					Size:      [2]float64{float64(width), float64(height)},
+					X:         float64(x),
+					Y:         float64(y),
+					Top:       float64(stop),
+					Middle:    float64(smid),
+					Bottom:    float64(sbot),
+					Left:      float64(sleft),
+					Center:    float64(scenter),
+					Right:     float64(sright),
+				},
+				Inline: inline,
 			}
 
 			syls = append(syls, s)
@@ -376,9 +337,6 @@ func (d *Line) Syls() (syls []*Syl) {
 
 // Script represent the SSA Script
 type Script struct {
-	scriptIn           *reader.Script
-	scriptOut          *writer.Script
-	fontFace           map[string]font.Face
 	Resolution         [2]int // WIDTH, HEIGHT
 	VideoPath          string
 	VideoZoom          float64
@@ -391,6 +349,9 @@ type Script struct {
 	MetaTiming         string
 	Audio              string
 	LineN              int
+	scriptIn           *reader.Script
+	scriptOut          *writer.Script
+	fontFace           map[string]font.Face
 }
 
 // Lines List all the lines in a Script
@@ -478,34 +439,36 @@ func (fx *Script) Lines() (dialogs []*Line) {
 		}
 
 		d := &Line{
-			Layer:      dlg.Layer,
-			StartTime:  start,
-			EndTime:    end,
-			Duration:   duration,
-			MidTime:    start + int(duration/2),
-			Style:      dlg.Style,
-			StyleName:  dlg.StyleName,
-			Actor:      dlg.Actor,
-			Effect:     dlg.Effect,
-			Text:       text,
-			Tags:       dlg.Tags,
-			Comment:    dlg.Comment,
+			Dialog: Dialog{
+				Layer:     dlg.Layer,
+				StartTime: start,
+				EndTime:   end,
+				Duration:  duration,
+				MidTime:   start + int(duration/2),
+				Style:     dlg.Style,
+				StyleName: dlg.StyleName,
+				Actor:     dlg.Actor,
+				Effect:    dlg.Effect,
+				Text:      text,
+				Tags:      dlg.Tags,
+				Comment:   dlg.Comment,
+				Width:     float64(width),
+				Height:    float64(height),
+				Size:      [2]float64{float64(width), float64(height)},
+				X:         float64(x),
+				Y:         float64(y),
+				Top:       float64(ltop),
+				Middle:    float64(lmid),
+				Bottom:    float64(lbot),
+				Left:      float64(lleft),
+				Center:    float64(lcenter),
+				Right:     float64(lright),
+			},
 			Kara:       dlg.Text,
-			syls:       syls,
 			SylN:       len(syls),
 			CharN:      charN,
+			syls:       syls,
 			fontFace:   fontFace,
-			Width:      float64(width),
-			Height:     float64(height),
-			Size:       [2]float64{float64(width), float64(height)},
-			X:          float64(x),
-			Y:          float64(y),
-			Top:        float64(ltop),
-			Middle:     float64(lmid),
-			Bottom:     float64(lbot),
-			Left:       float64(lleft),
-			Center:     float64(lcenter),
-			Right:      float64(lright),
 			resolution: fx.Resolution,
 		}
 		dialogs = append(dialogs, d)
@@ -545,35 +508,26 @@ func (fx *Script) CopyChar(dialog *Char) Char {
 	return *dialog
 }
 
+// Copy create a copy of the current Dialog (Line, Syl,Char)
+func (fx *Script) Copy(dialog interface{}) interface{} {
+	switch dlg := dialog.(type) {
+	case *Line:
+		return *dlg
+	case *Syl:
+		return *dlg
+	case *Char:
+		return *dlg
+	default:
+		fmt.Println("Not admitted object")
+	}
+	return nil
+}
+
 // Add append a Dialog (Syl, Char, Line) to Script
 func (fx *Script) Add(dialog interface{}) {
-
-	// No me gusta repetir tanto código
-	// pero funciona
-
 	switch dlg := dialog.(type) {
 	case Line:
-		d := NewDialog(dlg.Text)
-		d.Layer = dlg.Layer
-		d.Start = asstime.MStoSSA(dlg.StartTime)
-		d.End = asstime.MStoSSA(dlg.EndTime)
-		d.StyleName = dlg.StyleName
-		d.Actor = dlg.Actor
-		d.Effect = dlg.Effect
-		d.Tags = dlg.Tags
-		d.Comment = dlg.Comment
-		fx.scriptOut.AddDialog(d)
 	case Syl:
-		d := NewDialog(dlg.Text)
-		d.Layer = dlg.Layer
-		d.Start = asstime.MStoSSA(dlg.StartTime)
-		d.End = asstime.MStoSSA(dlg.EndTime)
-		d.StyleName = dlg.StyleName
-		d.Actor = dlg.Actor
-		d.Effect = dlg.Effect
-		d.Tags = dlg.Tags
-		d.Comment = dlg.Comment
-		fx.scriptOut.AddDialog(d)
 	case Char:
 		d := NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
@@ -588,7 +542,6 @@ func (fx *Script) Add(dialog interface{}) {
 	default:
 		fmt.Println("Not admitted object")
 	}
-
 }
 
 // Save create the final script file (.ass)
@@ -661,8 +614,6 @@ func NewEffect(inFN string) *Script {
 	output.AddDialog(dke)
 
 	return &Script{
-		scriptIn:           input,
-		scriptOut:          output,
 		Resolution:         input.Resolution,
 		VideoPath:          input.VideoPath,
 		VideoZoom:          input.VideoZoom,
@@ -674,8 +625,10 @@ func NewEffect(inFN string) *Script {
 		MetaTranslation:    input.MetaTranslation,
 		MetaTiming:         input.MetaTiming,
 		Audio:              input.Audio,
-		fontFace:           fontFace,
 		LineN:              LineN,
+		fontFace:           fontFace,
+		scriptIn:           input,
+		scriptOut:          output,
 	}
 }
 
