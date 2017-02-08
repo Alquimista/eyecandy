@@ -227,5 +227,5 @@ func IRange(n int, start, end float64, f Interp) (rng []float64) {
 }
 
 func ICircleRange(n int, f Interp) []float64 {
-	return IRange(n, 0.0, 360.0, f)
+	return IRange(n+1, 0.0, 360.0, f)[:n]
 }

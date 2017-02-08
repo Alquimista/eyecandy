@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Alquimista/eyecandy/interpolate"
 	"github.com/Alquimista/eyecandy/utils"
 )
 
@@ -74,23 +75,22 @@ func (c Color) MixRGB(c2 *Color) *Color {
 	return c.BlendRGB(c2, 0.5)
 }
 
-func (c1 Color) DistanceRgb(c2 *Color) float64 {
-	deltaR := c1.R - c2.R
-	deltaG := c1.G - c2.G
-	deltaB := c1.B - c2.B
-	return math.Sqrt(float64(deltaR*deltaR + deltaG*deltaG + deltaB*deltaB))
-}
+// func (c Color) DistanceRgb(c2 *Color) float64 {
+// 	deltaR := c.R - c2.R
+// 	deltaG := c.G - c2.G
+// 	deltaB := c.B - c2.B
+// 	return math.Sqrt(float64(deltaR*deltaR + deltaG*deltaG + deltaB*deltaB))
+// }
 
 func Equal(c, c2 *Color) bool {
 	return reflect.DeepEqual(c, c2)
 }
 
-func Rainbow(n, s, v int) (colors []*Color) {
-	for i := 0; i < n; i++ {
-		h := float64(i) * 360 / float64(n)
+func Rainbow(n, s, v int, f interpolate.Interp) (colors []*Color) {
+	for _, h := range interpolate.ICircleRange(n, f) {
 		colors = append(colors, NewFromHSV(int(h+0.5), s, v))
 	}
-	return
+	return colors
 }
 
 // Algorithm from here:

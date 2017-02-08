@@ -74,9 +74,8 @@ func zip(lists ...[]float64) func() []float64 {
 	}
 }
 
-func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) (colors []*Color) {
+func gradient(n int, c *Color, c2 *Color, f interpolate.Interp) (colors []*Color) {
 
-	// rvalues := []float64
 	r1, g1, b1 := c.RGB()
 	r2, g2, b2 := c2.RGB()
 
@@ -89,6 +88,31 @@ func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) (colors []*Colo
 			colors, NewFromRGB(uint8(red[i]), uint8(green[i]), uint8(blue[i])))
 	}
 	return
+}
+
+func Gradient(n int, clrs []*Color, f interpolate.Interp) []*Color {
+	clrn := len(clrs)
+	nOut := int(n / (clrn - 1))
+	colors := []*Color{}
+	if clrn > n {
+		panic("The number of colors can not be greater than the steps")
+	} else if clrn == n {
+		return clrs
+	} else if clrn > 2 {
+		for i := 0; i < clrn-1; i++ {
+			if i == clrn-2 && n%2 == 1 {
+				nOut += 1
+			}
+			colors = append(colors, gradient(nOut, clrs[i], clrs[i+1], f)...)
+		}
+		return colors
+	} else {
+		return gradient(nOut, clrs[0], clrs[1], f)
+	}
+}
+
+func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) []*Color {
+	return gradient(n, c, c2, f)
 }
 
 func (c *Color) MinRGB1() (min float64) {

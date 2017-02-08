@@ -345,7 +345,7 @@ func T(args ...interface{}) string {
 		if !ok1 {
 			panic("2nd parameter not type string.")
 		}
-		return fmt.Sprintf(`\t(%0.2f,%s)`, m, accel)
+		return fmt.Sprintf(`\t(%0.2f,%s)`, accel, m)
 	} else if lenARGS == 3 {
 		// T(t1, t2, style)
 		t1, ok := args[0].(int)
@@ -379,7 +379,7 @@ func T(args ...interface{}) string {
 		if !ok3 {
 			panic("4th parameter not type string.")
 		}
-		return fmt.Sprintf(`\t(%d,%d,%s)`, t1, t2, accel, m)
+		return fmt.Sprintf(`\t(%d,%d,%0.2f,%s)`, t1, t2, accel, m)
 	} else {
 		panic("Wrong parameter count.")
 	}
