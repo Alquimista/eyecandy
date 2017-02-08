@@ -36,6 +36,14 @@ func doFX() {
 		colorsb := cblue.Gradient(line.CharN, c1, Cosine6)
 		iCustom := interpolate.IRange(line.CharN, 0.0, 1.0, Cosine6)
 
+		MCOLOR := color.Gradient(
+			line.CharN,
+			[]*color.Color{
+				color.Whitesmoke,
+				color.Lightgreen,
+				color.Lightsteelblue},
+			interpolate.Linear)
+
 		for ci, char := range line.Chars() {
 
 			x, y := char.Left, char.Bottom
@@ -54,8 +62,9 @@ func doFX() {
 				s.EndTime = char.EndTime
 			}
 			s.Layer = 1
-			s.Tags = Pos(x, y) + Blur(1) + C(c2.HTML()) + Fsc(130.0) +
-				T(Fsc(100.0)+Blur(2)+C(colorsb[ci].HTML())) + An(1)
+			s.Tags = Pos(x, y) + Blur(1) + C(MCOLOR[ci].HTML()) + Fsc(130.0) +
+				T(Fsc(100.0)+Blur(2)+C(colorsb[ci].HTML())) +
+				An(1)
 			subs.Add(s)
 
 			// Silabas Muertas (cantadas)
