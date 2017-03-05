@@ -8,6 +8,7 @@ import (
 	candy "github.com/Alquimista/eyecandy"
 	. "github.com/Alquimista/eyecandy/asstags"
 	"github.com/Alquimista/eyecandy/color"
+	"github.com/Alquimista/eyecandy/draw"
 	"github.com/Alquimista/eyecandy/interpolate"
 	"github.com/Alquimista/eyecandy/utils"
 )
@@ -26,6 +27,14 @@ func Cosine6(t, start, end float64) float64 {
 func doFX() {
 
 	subs := candy.NewEffect(inputScript)
+
+	fmt.Println(draw.Square(100, 100).Draw(1))
+	fmt.Println(draw.Square(100, 100).Scale(2.0, 2.0).Draw(1))
+	fmt.Println(draw.Circle(100, false).Draw(1))
+	fmt.Println(draw.Heart(30).Draw(1))
+	fmt.Println(draw.Ring(100, 20).Draw(1))
+	fmt.Println(draw.Square(100, 100).Translate(2, 2).Draw(1))
+	fmt.Println(draw.Triangle(150).Draw(1))
 
 	for _, line := range subs.Lines() {
 

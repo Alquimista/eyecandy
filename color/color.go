@@ -106,9 +106,8 @@ func Gradient(n int, clrs []*Color, f interpolate.Interp) []*Color {
 			colors = append(colors, gradient(nOut, clrs[i], clrs[i+1], f)...)
 		}
 		return colors
-	} else {
-		return gradient(nOut, clrs[0], clrs[1], f)
 	}
+	return gradient(nOut, clrs[0], clrs[1], f)
 }
 
 func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) []*Color {

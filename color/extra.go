@@ -11,6 +11,17 @@ import (
 	"github.com/Alquimista/eyecandy/utils"
 )
 
+func ColorHTMLRange(n int, clrs []string) (colorOutput []string) {
+	colorInput := []*Color{}
+	for _, clr := range clrs {
+		colorInput = append(colorInput, NewFromHTML(clr))
+	}
+	for _, clr := range Gradient(n, colorInput, interpolate.LinearSqr) {
+		colorOutput = append(colorOutput, clr.HTML())
+	}
+	return colorOutput
+}
+
 // Grayscale desaturate the color
 func (c Color) Grayscale() *Color {
 	// http://bit.ly/ce5Kps

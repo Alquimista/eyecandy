@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Alquimista/eyecandy/interpolate"
 	"github.com/Alquimista/fonts"
 	"github.com/golang/freetype/truetype"
 
@@ -150,6 +151,14 @@ func TrimSpaceCount(text string) (string, int, int) {
 	return strings.TrimSpace(text), leftSpace, rightSpace
 }
 
+func ChangeSignN(n int) int {
+	return n * -1
+}
+
+func ChangeSignF(n float64) float64 {
+	return n * -1.0
+}
+
 // RandomFloat random decimal number between min and max
 func RandomFloat(min, max float64) float64 {
 	rand.Seed(time.Now().UnixNano())
@@ -162,6 +171,22 @@ func RandomInt(min, max int) int {
 	return rand.Intn(max+1-min) + min
 }
 
+func RandomFloatRange(n int, min, max float64) (nums []float64) {
+	for i := 0; i < n; i++ {
+		nums = append(nums, RandomFloat(min, max))
+	}
+	return
+}
+
+func RandomIntRange(n, min, max int) (nums []int) {
+	for i := 0; i < n; i++ {
+		nums = append(nums, RandomInt(min, max))
+	}
+	return
+}
+
+//TODO: Generic RandomChoice
+
 // RandomChoiceString select a random choice in a string slice
 func RandomChoiceString(list []string) string {
 	rand.Seed(time.Now().UnixNano())
@@ -172,4 +197,31 @@ func RandomChoiceString(list []string) string {
 func RandomChoiceInt(list []int) int {
 	rand.Seed(time.Now().UnixNano())
 	return list[rand.Intn(len(list))]
+}
+
+// RandomChoiceFloat select a random choice in a float64 slice
+func RandomChoiceFloat(list []float64) float64 {
+	rand.Seed(time.Now().UnixNano())
+	return list[rand.Intn(len(list))]
+}
+
+func Polar2Rect(radius, angle float64) (x, y int) {
+	return int(math.Sin(angle) * radius), int(math.Cos(angle) * radius)
+}
+
+func Rect2Polar(px, py int) (angle, r float64) {
+	if px == 0 && py == 0 {
+		return 0, 0 // The angle is actually undefined.
+	}
+	x, y := float64(px), float64(py)
+	return math.Mod(math.Atan2(x, y)+2*math.Pi, 2*math.Pi), math.Hypot(x, y)
+}
+
+func CircleRange(
+	n int, x, y, radius float64, f interpolate.Interp) (nums []float64) {
+	for _, angle := range interpolate.ICircleRange(n, f) {
+		px, py := Polar2Rect(radius, angle)
+		nums = append(nums, x+float64(px), y+float64(py))
+	}
+	return
 }
