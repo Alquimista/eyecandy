@@ -110,6 +110,26 @@ func Gradient(n int, clrs []*Color, f interpolate.Interp) []*Color {
 	return gradient(nOut, clrs[0], clrs[1], f)
 }
 
+// func GradientBezier(n int, clrs []*Color) []*Color {
+// 	clrn := len(clrs)
+// 	colors := []*Color{}
+// 	clrsfloat := []float64{}
+// 	if clrn > n {
+// 		panic("The number of colors can not be greater than the steps")
+// 	} else if clrn == n {
+// 		return clrs
+// 	} else if clrn >= 2 {
+// 		for _, c := range clrs {
+// 			clrsfloat = append(clrsfloat, float64(c.HEX())/0xFFFFFF)
+// 		}
+// 		for _, chex := range interpolate.BezierCurveRange(n, clrsfloat) {
+// 			fmt.Println(uint32(chex * 0xFFFFFF)
+// 			colors = append(colors, NewFromHEX(uint32(chex*0xFFFFFF)))
+// 		}
+// 	}
+// 	return colors
+// }
+
 func (c *Color) Gradient(n int, c2 *Color, f interpolate.Interp) []*Color {
 	return gradient(n, c, c2, f)
 }

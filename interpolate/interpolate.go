@@ -229,3 +229,11 @@ func IRange(n int, start, end float64, f Interp) (rng []float64) {
 func ICircleRange(n int, f Interp) []float64 {
 	return IRange(n+1, 0.0, 360.0, f)[:n]
 }
+
+func BezierCurveRange(n int, points []float64) (rng []float64) {
+	for i := 0; i < n; i++ {
+		t := float64(i) / float64(n-1)
+		rng = append(rng, BezierCurve(t, points))
+	}
+	return rng
+}

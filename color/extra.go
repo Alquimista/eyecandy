@@ -11,15 +11,26 @@ import (
 	"github.com/Alquimista/eyecandy/utils"
 )
 
-func ColorHTMLRange(n int, clrs []string) (colorOutput []string) {
-	colorInput := []*Color{}
-	for _, clr := range clrs {
-		colorInput = append(colorInput, NewFromHTML(clr))
+// func HTMLBezierRange(n int, colors ...string) (colorsOutput []string) {
+// 	colorsInput := []*Color{}
+// 	for _, clr := range colors {
+// 		colorsInput = append(colorsInput, NewFromHTML(clr))
+// 	}
+// 	for _, clr := range GradientBezier(n, colorsInput) {
+// 		colorsOutput = append(colorsOutput, clr.HTML())
+// 	}
+// 	return colorsOutput
+// }
+
+func HTMLRange(n int, colors ...string) (colorsOutput []string) {
+	colorsInput := []*Color{}
+	for _, clr := range colors {
+		colorsInput = append(colorsInput, NewFromHTML(clr))
 	}
-	for _, clr := range Gradient(n, colorInput, interpolate.LinearSqr) {
-		colorOutput = append(colorOutput, clr.HTML())
+	for _, clr := range Gradient(n, colorsInput, interpolate.LinearSqr) {
+		colorsOutput = append(colorsOutput, clr.HTML())
 	}
-	return colorOutput
+	return colorsOutput
 }
 
 // Grayscale desaturate the color

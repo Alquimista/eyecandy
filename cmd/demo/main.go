@@ -5,10 +5,9 @@ import (
 	"math"
 	"time"
 
-	candy "github.com/Alquimista/eyecandy"
+	"github.com/Alquimista/eyecandy"
 	. "github.com/Alquimista/eyecandy/asstags"
 	"github.com/Alquimista/eyecandy/color"
-	"github.com/Alquimista/eyecandy/draw"
 	"github.com/Alquimista/eyecandy/interpolate"
 	"github.com/Alquimista/eyecandy/utils"
 )
@@ -26,15 +25,7 @@ func Cosine6(t, start, end float64) float64 {
 
 func doFX() {
 
-	subs := candy.NewEffect(inputScript)
-
-	fmt.Println(draw.Square(100, 100).Draw(1))
-	fmt.Println(draw.Square(100, 100).Scale(2.0, 2.0).Draw(1))
-	fmt.Println(draw.Circle(100, false).Draw(1))
-	fmt.Println(draw.Heart(30).Draw(1))
-	fmt.Println(draw.Ring(100, 20).Draw(1))
-	fmt.Println(draw.Square(100, 100).Translate(2, 2).Draw(1))
-	fmt.Println(draw.Triangle(150).Draw(1))
+	subs := eyecandy.NewEffect(inputScript)
 
 	for _, line := range subs.Lines() {
 
@@ -45,13 +36,18 @@ func doFX() {
 		colorsb := cblue.Gradient(line.CharN, c1, Cosine6)
 		iCustom := interpolate.IRange(line.CharN, 0.0, 1.0, Cosine6)
 
-		MCOLOR := color.Gradient(
-			line.CharN,
-			[]*color.Color{
-				color.Whitesmoke,
-				color.Lightgreen,
-				color.Lightsteelblue},
-			interpolate.Linear)
+		// MCOLOR := color.Gradient(
+		// 	line.CharN,
+		// 	[]*color.Color{
+		// 		color.Whitesmoke,
+		// 		color.Lightgreen,
+		// 		color.Lightsteelblue},
+		// 	interpolate.Linear)
+
+		MCOLOR := color.HTMLRange(line.CharN,
+			color.Whitesmoke.HTML(),
+			color.Lightgreen.HTML(),
+			color.Lightsteelblue.HTML())
 
 		for ci, char := range line.Chars() {
 
@@ -71,7 +67,7 @@ func doFX() {
 				s.EndTime = char.EndTime
 			}
 			s.Layer = 1
-			s.Tags = Pos(x, y) + Blur(1) + C(MCOLOR[ci].HTML()) + Fsc(130.0) +
+			s.Tags = Pos(x, y) + Blur(1) + C(MCOLOR[ci]) + Fsc(130.0) +
 				T(Fsc(100.0)+Blur(2)+C(colorsb[ci].HTML())) +
 				An(1)
 			subs.Add(s)

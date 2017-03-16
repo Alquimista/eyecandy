@@ -39,14 +39,22 @@ const (
 )
 
 var reStripTags = regexp.MustCompile(`({[\s\w\d\\-]+})*`)
+var reStripTags2 = regexp.MustCompile(`({[^k]+})*`)
 var reKara = regexp.MustCompile(
 	`{\\k[of]?(?P<duration>\d+)` + // k duration in centiseconds
 		`(?:\-)*(?P<inline>[\w\d]+)*` + // inline
-		`(?:\s*}\s*{[\s\w\d]+)*` + //ignore tags
 		`}(?P<text>[^\{\}]*)`) //text
 
-func stripSSATags(text string) string {
+func StripSSATags(text string) string {
 	return strings.TrimSpace(reStripTags.ReplaceAllString(text, ""))
+}
+
+func StripSSATagsNotKDur(text string) string {
+	return strings.TrimSpace(reStripTags2.ReplaceAllString(text, ""))
+}
+
+func GetSyls(text string) [][]string {
+	return reKara.FindAllStringSubmatch(StripSSATagsNotKDur(text), -1)
 }
 
 type Dialog struct {
@@ -364,7 +372,7 @@ func (fx *Script) Lines() (dialogs []*Line) {
 		end := asstime.SSAtoMS(dlg.EndTime)
 		start := asstime.SSAtoMS(dlg.StartTime)
 		duration := end - start
-		text := stripSSATags(dlg.Text)
+		text := StripSSATags(dlg.Text)
 		fontFace := fx.fontFace[dlg.StyleName]
 		width, height := utils.MeasureString(fontFace, text)
 		width *= dlg.Style.Scale[0] / 100.0
@@ -426,7 +434,7 @@ func (fx *Script) Lines() (dialogs []*Line) {
 			y = lbot
 		}
 
-		syls := reKara.FindAllStringSubmatch(dlg.Text, -1)
+		syls := GetSyls(dlg.Text)
 
 		charN := 0
 		for _, s := range syls {
