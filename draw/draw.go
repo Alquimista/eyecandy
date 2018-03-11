@@ -48,7 +48,7 @@ func (d Shape) B(args ...int) *Shape {
 		for _, arg := range args {
 			bspline += fmt.Sprintf(`%d `, arg)
 		}
-		d.draw += bspline + " c"
+		d.draw += bspline + "c"
 	} else {
 		panic("Wrong parameter count.")
 	}
@@ -87,6 +87,55 @@ func (d Shape) String() string {
 // NewScript create a new Script Struct with defaults
 func NewShape() *Shape {
 	return &Shape{}
+}
+
+func Poligon(r int, s int) *Shape {
+	iangle := 360.0 / float64(s)
+	angle := 90.0 + (iangle / 2.0)
+	d := NewShape()
+	d = d.M(utils.Polar2Rect(float64(r), angle))
+	angle += iangle
+	for i := 1; i < s+1; i++ {
+		// convert polar to rectangular
+		d = d.L(utils.Polar2Rect(float64(r), angle))
+		angle += iangle
+	}
+	d = d.Translate(r, r)
+	return d
+}
+
+func Pentagon(r int) *Shape {
+	return Poligon(r, 5)
+}
+
+func Hexagon(r int) *Shape {
+	return Poligon(r, 6)
+}
+
+func Star(r1 int, r2 int, spikes int) *Shape {
+	// the smallest radio is always the inner circle
+	if r1 > r2 {
+		r1, r2 = r2, r1
+	}
+	iangle := 360.0 / float64(spikes)
+	angle1 := -90.0 + (iangle / 2.0)
+	angle2 := angle1 + (iangle / 2.0)
+
+	d := NewShape()
+	for i := 0; i < spikes+1; i++ {
+		// ass draw commands
+		// convert polar to rectangular
+		if i == 0 {
+			d = d.M(utils.Polar2Rect(float64(r1), angle1))
+		} else {
+			d = d.L(utils.Polar2Rect(float64(r1), angle1))
+		}
+		d = d.L(utils.Polar2Rect(float64(r2), angle2))
+		angle1 += iangle
+		angle2 += iangle
+	}
+	d = d.Translate(r2, r2)
+	return d
 }
 
 func Pixel() *Shape {

@@ -29,6 +29,10 @@ var reSSAColor = regexp.MustCompile(
 		`(?:&)*`)
 
 func hexToComponents(color string) []string {
+	if len(color) == 1 {
+		s := strings.Repeat(string(color), 2)
+		return []string{s, s, s}
+	}
 	hexstring := reColorHEXSTRING.FindStringSubmatch(color)[1]
 	if len(hexstring) == 3 {
 		clr := []string{}

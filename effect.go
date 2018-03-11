@@ -12,7 +12,8 @@ import (
 	"github.com/Alquimista/eyecandy/asstime"
 	"github.com/Alquimista/eyecandy/reader"
 	"github.com/Alquimista/eyecandy/utils"
-	"github.com/Alquimista/eyecandy/writer"
+	// "github.com/Alquimista/eyecandy/writer"
+	writer "github.com/Alquimista/eyecandy/writer2"
 )
 
 const (
@@ -73,6 +74,7 @@ type Dialog struct {
 	Width     float64
 	Height    float64
 	Size      [2]float64
+	XFix      float64
 	X         float64
 	Y         float64
 	Top       float64
@@ -215,7 +217,7 @@ func (d *Line) Syls() (syls []*Syl) {
 	spaceWidth, _ := utils.MeasureString(fontFace, " ")
 	spaceWidth *= d.Style.Scale[0] / 100.0
 
-	curX := d.Left
+	curX := d.Left + float64(d.SylN)*-d.XFix/2.0
 	maxWidth := 0.0
 	sumHeight := 0.0
 	resx, resy := float64(d.resolution[0]), float64(d.resolution[1])
@@ -239,7 +241,7 @@ func (d *Line) Syls() (syls []*Syl) {
 
 		width, height := utils.MeasureString(fontFace, strippedText)
 		width *= d.Style.Scale[0] / 100.0
-		height *= d.Height
+		height = d.Height
 
 		middleheight := float64(height) / 2.0
 		middlewidth := float64(width) / 2.0
@@ -268,7 +270,8 @@ func (d *Line) Syls() (syls []*Syl) {
 			case 3, 9: // right
 				x = sright
 			}
-			curX += width + float64(postSpace)*spaceWidth
+			curX += width + float64(postSpace)*spaceWidth +
+				float64(d.Style.Spacing) + d.XFix
 
 		} else { // vertical alignment
 			xFix := (maxWidth - width) / 2.0
@@ -357,6 +360,8 @@ type Script struct {
 	MetaTiming         string
 	Audio              string
 	LineN              int
+	Shift              int
+	XFix               float64
 	scriptIn           *reader.Script
 	scriptOut          *writer.Script
 	fontFace           map[string]font.Face
@@ -463,6 +468,7 @@ func (fx *Script) Lines() (dialogs []*Line) {
 				Width:     float64(width),
 				Height:    float64(height),
 				Size:      [2]float64{float64(width), float64(height)},
+				XFix:      fx.XFix,
 				X:         float64(x),
 				Y:         float64(y),
 				Top:       float64(ltop),
@@ -516,31 +522,37 @@ func (fx *Script) CopyChar(dialog *Char) Char {
 	return *dialog
 }
 
-// Copy create a copy of the current Dialog (Line, Syl,Char)
-func (fx *Script) Copy(dialog interface{}) interface{} {
-	switch dlg := dialog.(type) {
-	case *Line:
-		return *dlg
-	case *Syl:
-		return *dlg
-	case *Char:
-		return *dlg
-	default:
-		fmt.Println("Not admitted object")
-	}
-	return nil
-}
-
 // Add append a Dialog (Syl, Char, Line) to Script
 func (fx *Script) Add(dialog interface{}) {
+
 	switch dlg := dialog.(type) {
 	case Line:
+		d := NewDialog(dlg.Text)
+		d.Layer = dlg.Layer
+		d.Start = asstime.MStoSSA(dlg.StartTime + fx.Shift)
+		d.End = asstime.MStoSSA(dlg.EndTime + fx.Shift)
+		d.StyleName = dlg.StyleName
+		d.Actor = dlg.Actor
+		d.Effect = dlg.Effect
+		d.Tags = dlg.Tags
+		d.Comment = dlg.Comment
+		fx.scriptOut.AddDialog(d)
 	case Syl:
+		d := NewDialog(dlg.Text)
+		d.Layer = dlg.Layer
+		d.Start = asstime.MStoSSA(dlg.StartTime + fx.Shift)
+		d.End = asstime.MStoSSA(dlg.EndTime + fx.Shift)
+		d.StyleName = dlg.StyleName
+		d.Actor = dlg.Actor
+		d.Effect = dlg.Effect
+		d.Tags = dlg.Tags
+		d.Comment = dlg.Comment
+		fx.scriptOut.AddDialog(d)
 	case Char:
 		d := NewDialog(dlg.Text)
 		d.Layer = dlg.Layer
-		d.Start = asstime.MStoSSA(dlg.StartTime)
-		d.End = asstime.MStoSSA(dlg.EndTime)
+		d.Start = asstime.MStoSSA(dlg.StartTime + fx.Shift)
+		d.End = asstime.MStoSSA(dlg.EndTime + fx.Shift)
 		d.StyleName = dlg.StyleName
 		d.Actor = dlg.Actor
 		d.Effect = dlg.Effect
@@ -550,6 +562,7 @@ func (fx *Script) Add(dialog interface{}) {
 	default:
 		fmt.Println("Not admitted object")
 	}
+
 }
 
 // Save create the final script file (.ass)
@@ -575,6 +588,8 @@ func NewEffect(inFN string) *Script {
 
 	fontFace := make(map[string]font.Face)
 
+	ssampling := 1
+
 	for _, style := range input.StyleUsed {
 		s := NewStyle(style.Name)
 		s.Name = style.Name
@@ -591,7 +606,7 @@ func NewEffect(inFN string) *Script {
 		s.Margin = style.Margin
 		output.AddStyle(s)
 
-		ff, err := utils.FontLoad(s.FontName, s.FontSize)
+		ff, err := utils.FontLoad(s.FontName, s.FontSize*ssampling)
 		if err != nil {
 			panic(err)
 		}

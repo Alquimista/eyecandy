@@ -86,3 +86,11 @@ func CycleTags(start, dur, interval int, tags ...string) (ttags string) {
 	}
 	return
 }
+
+func FscAR(x, y float64, ar float64, res [2]int) string {
+	return Fscx(x) + Fscy(y*float64(res[1])*(ar)/float64(res[0]))
+}
+
+func FscScale(x, y float64, scale [2]float64) string {
+	return Fscx(x*scale[0]/100) + Fscy(y*scale[1]/100)
+}

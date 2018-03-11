@@ -161,6 +161,7 @@ func parseStyle(value string) *Style {
 	}
 }
 
+// parseAR parse an SSA/ASS Aspect Ratio.
 func parseAR(value string) float64 {
 	ar := strings.Replace(value, "c", "", -1)
 	numden := strings.SplitN(ar, ":", 2)

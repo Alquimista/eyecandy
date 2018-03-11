@@ -112,8 +112,10 @@ func AppendStrUnique(slice []string, s string) []string {
 // given the current font face.
 func MeasureString(ff font.Face, s string) (w float64, h float64) {
 	d := &font.Drawer{Face: ff}
-	return float64(d.MeasureString(s) >> 6),
-		float64(ff.Metrics().Height>>6) * 96.0 / 72.0
+	ssampling := 1.0
+	w = float64(d.MeasureString(s)>>6) / ssampling
+	h = (float64(ff.Metrics().Height>>6) * 96 / 72) / ssampling
+	return
 }
 
 // FontLoad load and parse a truetype font.
@@ -205,18 +207,23 @@ func RandomChoiceFloat(list []float64) float64 {
 	return list[rand.Intn(len(list))]
 }
 
+// Polar2Rect convert polar coords to rectangular.
 func Polar2Rect(radius, angle float64) (x, y int) {
-	return int(math.Sin(angle) * radius), int(math.Cos(angle) * radius)
+	theta := Rad(angle)
+	return int(math.Cos(theta) * radius), int(math.Sin(theta) * radius)
 }
 
+// Rect2Polar convert rectangolar coords to rectangular.
 func Rect2Polar(px, py int) (angle, r float64) {
 	if px == 0 && py == 0 {
 		return 0, 0 // The angle is actually undefined.
 	}
 	x, y := float64(px), float64(py)
-	return math.Mod(math.Atan2(x, y)+2*math.Pi, 2*math.Pi), math.Hypot(x, y)
+	return Deg(math.Mod(math.Atan2(x, y)+2*math.Pi, 2*math.Pi)),
+		math.Hypot(x, y)
 }
 
+// CircleRange generate x, y coords of a circle.
 func CircleRange(
 	n int, x, y, radius float64, f interpolate.Interp) (nums []float64) {
 	for _, angle := range interpolate.ICircleRange(n, f) {

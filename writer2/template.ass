@@ -1,0 +1,54 @@
+[Script Info]
+; {{.Comment}}
+Title: {{.MetaTitle}}
+{{- if not .MetaOriginalScript }}
+Original Script: {{.MetaFilename}}
+{{- else}}
+Original Script: {{.MetaOriginalScript}}
+{{- end}}
+Translation: {{.MetaTranslation}}
+Timing: {{.MetaTiming}}
+ScriptType: v4.00+
+{{- if or (not (index .Resolution 0)) (not (index .Resolution 1))}}
+PlayResX: 1280
+PlayResY: 720
+{{- else}}
+PlayResX: {{index .Resolution 0}}
+PlayResY: {{index .Resolution 1}}
+{{- end}}
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.601
+
+[Aegisub Project Garbage]
+Video File: {{.VideoPath}}
+Video AR Mode: 4
+{{- if not .VideoAR }}
+Video AR Value: {{printf "%.6f" (div (index .Resolution 0) (index .Resolution 1)) }}
+{{- else}}
+Video AR Value: {{printf "%.6f" .VideoAR}}
+{{- end}}
+Video Zoom Percent: {{printf "%.6f" .VideoZoom}}
+Video Position: {{.VideoPosition}}
+Audio File: {{.Audio}}
+Active Line: 1
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+{{- range .Style}}
+Style: {{.Name}},{{.FontName}},{{.FontSize}},{{ssal (index .Color 0)}},{{ssal (index .Color 1)}},{{ssal (index .Color 2)}},{{ssal (index .Color 3)}},{{- if .Bold}}-1{{- else}}0{{- end}},{{- if .Italic}}-1{{- else}}0{{- end}},{{- if .Underline}}-1{{- else}}0{{- end}},{{- if .StrikeOut}}-1{{- else}}0{{- end}},{{printf "%.4f" (index .Scale 0)}},{{printf "%.4f" (index .Scale 1)}},{{printf "%.1f" .Spacing}},{{.Angle}},{{- if not .OpaqueBox}} 0 {{- else}} 3{{- end}},{{printf "%.4f" .Bord}},{{printf "%.4f" .Shadow}},{{.Alignment}},{{printf "%04d" (index .Margin 0)}},{{printf "%04d" (index .Margin 1)}},{{printf "%04d" (index .Margin 2)}},1
+{{- end}}
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Texts
+{{- if not .Dialog}}
+Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0000,0000,0000,,EyecandyFX
+{{- else}}
+{{- range .Dialog}}
+{{- if .Comment}}
+Comment: {{.Layer}},{{.Start}},{{.End}},{{.StyleName}},{{.Actor}},0000,0000,0000,{{.Effect}},{{.Text}}
+{{- else}}
+Dialogue: {{.Layer}},{{.Start}},{{.End}},{{.StyleName}},{{.Actor}},0000,0000,0000,{{.Effect}},{{if .Tags}}{{"{"}}{{.Tags}}{{"}"}}{{.Text}}{{else}}{{.Text}}{{end}}
+{{- end}}
+{{- end}}
+{{- end}}

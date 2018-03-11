@@ -44,6 +44,11 @@ func (c Color) Invert() *Color {
 	return NewFromRGB(^c.R, ^c.G, ^c.B)
 }
 
+func (c Color) Hue() int {
+	h, _, _ := c.HSV()
+	return h
+}
+
 func (c Color) Complementary() *Color {
 	h, s, v := c.HSV()
 	h = (h + 180) % 360
@@ -139,8 +144,20 @@ func RandomColorHSV(s, v int, f rnd) *Color {
 
 func RGoldenHue() int {
 	rand.Seed(time.Now().UnixNano())
-	return int(math.Mod(360*0.618033988749895*rand.Float64(), 360.0) + 0.5)
+	h := int(math.Mod(360*0.618033988749895*rand.Float64(), 360.0) + 0.5)
+	if h > 360 {
+		h -= 360
+	}
+	return h
 }
+
 func RHue() int {
-	return utils.RandomInt(0, 360)
+	return utils.RandomInt(1, 360)
 }
+
+// func Random(color Color, luminosity int) {
+// 	h := color.HUE()
+// }
+
+// func Random(luminosity int) *Color {
+// }
