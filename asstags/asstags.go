@@ -64,7 +64,7 @@ func Fsc(args ...interface{}) string {
 	} else {
 		panic("Wrong parameter count.")
 	}
-	return ""
+	// return ""
 }
 
 // Fsc Font scale X
@@ -383,7 +383,7 @@ func T(args ...interface{}) string {
 	} else {
 		panic("Wrong parameter count.")
 	}
-	return ""
+	// return ""
 }
 
 func Clip(x1, y1, x2, y2 int) string {

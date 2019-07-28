@@ -1,0 +1,2 @@
+// Package asstags
+package asstags

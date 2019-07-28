@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/Alquimista/eyecandy/color"
@@ -33,6 +34,7 @@ type DialogCollection []*dialog
 
 // get list dialog's in a SSA/ASS Script
 func (dlgs DialogCollection) get(commented bool) (dialogs DialogCollection) {
+
 	for _, d := range dlgs {
 		if d.Comment == commented {
 			dialogs = append(dialogs, d)
@@ -112,8 +114,8 @@ type Script struct {
 
 // parseStyle parse an SSA/ASS Subtitle Dialog.
 func parseDialog(key, value string) *dialog {
-	// TODO ?: use sprintf
-	d := strings.SplitN(value, ",", 10)
+	// d := strings.SplitN(value, ",", 10)
+	d := regexp.MustCompile(",").Split(value, 10)
 	return &dialog{
 		Layer:     utils.Str2int(d[0]),
 		StartTime: d[1],
@@ -128,8 +130,8 @@ func parseDialog(key, value string) *dialog {
 
 // parseStyle parse an SSA/ASS Subtitle Style.
 func parseStyle(value string) *Style {
-	// TODO ?: use sprintf
-	sty := strings.SplitN(value, ",", 23)
+	// sty := strings.SplitN(value, ",", 23)
+	sty := regexp.MustCompile(",").Split(value, 23)
 	return &Style{
 		Name:     sty[0],
 		FontName: sty[1],

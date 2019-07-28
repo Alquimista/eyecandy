@@ -38,14 +38,6 @@ func doFX() {
 		colorsb := cblue.Gradient(line.CharN, c1, Cosine6)
 		iCustom := interpolate.IRange(line.CharN, 0.0, 1.0, Cosine6)
 
-		// MCOLOR := color.Gradient(
-		// 	line.CharN,
-		// 	[]*color.Color{
-		// 		color.Whitesmoke,
-		// 		color.Lightgreen,
-		// 		color.Lightsteelblue},
-		// 	interpolate.Linear)
-
 		MCOLOR := color.HTMLRange(line.CharN,
 			color.Whitesmoke.HTML(),
 			color.Lightgreen.HTML(),
@@ -73,29 +65,6 @@ func doFX() {
 				T(Fsc(100.0)+C(3, c3.HTML())+Blur(2)+C(colorsb[ci].HTML())) +
 				C(3, "#4C5353") + An(1)
 			subs.Add(s)
-
-			// for i := 1; i <= 200; i++ {
-			// 	stime := 0
-			// 	px := x + float64(utils.RandomInt(-35, 35))
-			// 	py := y + float64(utils.RandomInt(-35, 35)) - char.Height/2
-			// 	px2 := px + float64(utils.RandomInt(-45, 45)) - 40
-			// 	py2 := py - float64(utils.RandomInt(-25, 25))
-			// 	m := Move(px, py, px2, py2)
-			// 	// m := Pos(x, y)
-			// 	s = subs.CopyChar(char) // *char
-			// 	s.Layer = utils.RandomInt(0, 3)
-			// 	s.Tags = m + Shad(0) + C(3, "f") + C("f") + Blur(10) +
-			// 		Bord(0.8) + An(1)
-			// 	s.Text = draw.Dot().Draw(1)
-			// 	subs.Add(s)
-			// 	s.EndTime = char.SylEndTime + utils.RandomInt(500, 3000)
-			// 	stime = char.SylStartTime - utils.RandomInt(150, 1500)
-			// 	if stime >= s.EndTime {
-			// 		s.StartTime = char.SylStartTime
-			// 	} else {
-			// 		s.StartTime = stime
-			// 	}
-			// }
 
 			// Silabas Muertas (cantadas)
 			s = subs.CopyChar(char) // *char

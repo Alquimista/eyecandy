@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -17,7 +19,7 @@ import (
 const dummyVideoTemplate string = "?dummy:%.6f:%d:%d:%d:%d:%d:%d%s:"
 const dummyAudioTemplate string = "dummy-audio:silence?sr=44100&bd=16&" +
 	"ch=1&ln=396900000:" // silence?, noise? TODO: dummy audio function
-const tmpl string = "writer2/template.ass"
+const tmpl string = "writer2/template.ass.gotmpl"
 
 // Script SSA/ASS Subtitle Script.
 type Script struct {
@@ -62,8 +64,14 @@ func (s *Script) String() string {
 		"ssal": func(c color.Color) string { return c.SSAL() },
 	}
 
-	t := template.New("template.ass").Funcs(fm)
-	t, err := t.ParseFiles(tmpl)
+	t := template.New("template.ass.gotmpl").Funcs(fm)
+
+	base := "."
+	if _, filename, _, ok := runtime.Caller(0); ok {
+		base = path.Join(path.Dir(filename), "..")
+	}
+
+	t, err := t.ParseFiles(path.Join(base, tmpl))
 	// t, err := t.Parse(tmpl)
 	if err != nil {
 		log.Fatal("Parse: ", err)

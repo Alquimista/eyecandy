@@ -12,6 +12,7 @@ import (
 	"github.com/Alquimista/eyecandy/asstime"
 	"github.com/Alquimista/eyecandy/reader"
 	"github.com/Alquimista/eyecandy/utils"
+
 	// "github.com/Alquimista/eyecandy/writer"
 	writer "github.com/Alquimista/eyecandy/writer2"
 )
@@ -139,6 +140,7 @@ func (d *Line) Chars() (chars []*Char) {
 
 			width, _ := utils.MeasureString(d.fontFace, text)
 			width *= d.Style.Scale[0] / 100.0
+			// width += 2.0*s.Style.Bord + s.Style.Shadow
 			middlewidth := float64(width) / 2.0
 
 			cleft := float64(curX)
@@ -179,7 +181,7 @@ func (d *Line) Chars() (chars []*Char) {
 					MidTime:   end - start,
 					Text:      text,
 					Width:     float64(width),
-					Height:    d.Height,
+					Height:    d.Height, //+ 2.0*d.Style.Bord + d.Style.Shadow,
 					Size:      [2]float64{float64(width), d.Height},
 					X:         float64(x),
 					Y:         float64(d.Y),
@@ -216,6 +218,7 @@ func (d *Line) Syls() (syls []*Syl) {
 
 	spaceWidth, _ := utils.MeasureString(fontFace, " ")
 	spaceWidth *= d.Style.Scale[0] / 100.0
+	//spaceWidth += 2*d.Style.Bord + d.Style.Shadow
 
 	curX := d.Left + float64(d.SylN)*-d.XFix/2.0
 	maxWidth := 0.0
@@ -241,6 +244,7 @@ func (d *Line) Syls() (syls []*Syl) {
 
 		width, height := utils.MeasureString(fontFace, strippedText)
 		width *= d.Style.Scale[0] / 100.0
+		//width += 2.0*d.Style.Bord + d.Style.Shadow
 		height = d.Height
 
 		middleheight := float64(height) / 2.0
@@ -381,6 +385,7 @@ func (fx *Script) Lines() (dialogs []*Line) {
 		fontFace := fx.fontFace[dlg.StyleName]
 		width, height := utils.MeasureString(fontFace, text)
 		width *= dlg.Style.Scale[0] / 100.0
+		//width += 2*dlg.Style.Bord + dlg.Style.Shadow
 		height *= dlg.Style.Scale[1] / 100.0
 
 		align := dlg.Style.Alignment
@@ -606,7 +611,7 @@ func NewEffect(inFN string) *Script {
 		s.Margin = style.Margin
 		output.AddStyle(s)
 
-		ff, err := utils.FontLoad(s.FontName, s.FontSize*ssampling)
+		ff, err := utils.LoadFont(s.FontName, s.FontSize*ssampling)
 		if err != nil {
 			panic(err)
 		}

@@ -155,6 +155,15 @@ func Square(w, h int) *Shape {
 	return d
 }
 
+func Rectangle(x1, y1, x2, y2 int) *Shape {
+	d := NewShape()
+	d = d.M(x1, y1)
+	d = d.L(x2, y1)
+	d = d.L(x2, y2)
+	d = d.L(x1, y2)
+	return d
+}
+
 func Circle(r int, substract bool) *Shape {
 
 	resize := func(m string) string {

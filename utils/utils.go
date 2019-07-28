@@ -10,21 +10,28 @@ import (
 	"time"
 
 	"github.com/Alquimista/eyecandy/interpolate"
-	"github.com/Alquimista/fonts"
 	"github.com/golang/freetype/truetype"
+
+	//"github.com/Alquimista/fonts"
+	// "github.com/stephenwithav/fontcache"
+	"github.com/Alquimista/eyecandy/fontcache"
 
 	"golang.org/x/image/font"
 )
 
 const (
+	// RadToDeg Radians to Degrees
 	RadToDeg = 180 / math.Pi
+	// DegToRad Degrees to Radians
 	DegToRad = math.Pi / 180
 )
 
+// Rad Degrees to Radians
 func Rad(d float64) float64 {
 	return d * DegToRad
 }
 
+// Deg Radians to Degrees
 func Deg(r float64) float64 {
 	return r * RadToDeg
 }
@@ -118,23 +125,20 @@ func MeasureString(ff font.Face, s string) (w float64, h float64) {
 	return
 }
 
-// FontLoad load and parse a truetype font.
-func FontLoad(fontName string, fontSize int) (font.Face, error) {
+// LoadFont load and parse a truetype font.
+func LoadFont(fontName string, fontSize int) (face font.Face, err error) {
 
-	// TODO: select the correct font path
-	fontBytes, err := fonts.LoadFont(fontName)
-	if err != nil {
-		return nil, err
+	fc := fontcache.New()
+	fc.Init(fontcache.FontPaths)
+
+	// Retrieve font by name for use in a program.
+	f, ok := fc[strings.ToLower(fontName)]
+	if !ok {
+		return nil, nil
 	}
-	fontFace, err := truetype.Parse(fontBytes)
-	if err != nil {
-		return nil, err
-	}
-	face := truetype.NewFace(fontFace, &truetype.Options{
+	face = truetype.NewFace(f, &truetype.Options{
 		Size: float64(fontSize) * 72.0 / 96.0,
 		DPI:  72,
-		// Hinting: font.HintingNone,
-		Hinting: font.HintingFull,
 	})
 	return face, nil
 }
@@ -153,10 +157,12 @@ func TrimSpaceCount(text string) (string, int, int) {
 	return strings.TrimSpace(text), leftSpace, rightSpace
 }
 
+// ChangeSignN convert possitive to negative and back (integer)
 func ChangeSignN(n int) int {
 	return n * -1
 }
 
+// ChangeSignF convert possitive to negative and back (float)
 func ChangeSignF(n float64) float64 {
 	return n * -1.0
 }
@@ -173,6 +179,7 @@ func RandomInt(min, max int) int {
 	return rand.Intn(max+1-min) + min
 }
 
+// RandomFloatRange random n numbers between min and max (float)
 func RandomFloatRange(n int, min, max float64) (nums []float64) {
 	for i := 0; i < n; i++ {
 		nums = append(nums, RandomFloat(min, max))
@@ -180,6 +187,7 @@ func RandomFloatRange(n int, min, max float64) (nums []float64) {
 	return
 }
 
+// RandomIntRange random n numbers between min and max (integer)
 func RandomIntRange(n, min, max int) (nums []int) {
 	for i := 0; i < n; i++ {
 		nums = append(nums, RandomInt(min, max))
