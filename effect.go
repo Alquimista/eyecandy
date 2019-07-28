@@ -242,10 +242,10 @@ func (d *Line) Syls() (syls []*Syl) {
 
 		strippedText, preSpace, postSpace := utils.TrimSpaceCount(text)
 
-		width, height := utils.MeasureString(fontFace, strippedText)
+		width, _ := utils.MeasureString(fontFace, strippedText)
 		width *= d.Style.Scale[0] / 100.0
 		//width += 2.0*d.Style.Bord + d.Style.Shadow
-		height = d.Height
+		height := d.Height
 
 		middleheight := float64(height) / 2.0
 		middlewidth := float64(width) / 2.0
@@ -311,7 +311,7 @@ func (d *Line) Syls() (syls []*Syl) {
 			smid = stop + middleheight
 			sbot = stop + height
 			y = smid
-			curY += height
+			// curY += height
 		}
 
 		if text != "" {

@@ -339,7 +339,8 @@ func (s *Script) Save(fn string) {
 	}
 
 	// save changes
-	err = f.Sync()
+	// err =
+	f.Sync()
 }
 
 // NewScript create a new Script Struct with defaults

@@ -164,7 +164,7 @@ func Rectangle(x1, y1, x2, y2 int) *Shape {
 	return d
 }
 
-func Circle(r int, substract bool) *Shape {
+func Circle(r int, subtract bool) *Shape {
 
 	resize := func(m string) string {
 		return fmt.Sprintf(`%g`, (utils.Str2float(m)/100.0)*float64(r)*2.0)
@@ -179,7 +179,7 @@ func Circle(r int, substract bool) *Shape {
 	d.draw = "m 50 0 b 22 0 0 22 0 50 b 0 78 22 100 50 100 b 78 100 100 78 " +
 		"100 50 b 100 22 78 0 50 0 "
 
-	if substract {
+	if subtract {
 		d.draw = ShapeFilter(d.draw, swapCoords, "")
 	}
 
